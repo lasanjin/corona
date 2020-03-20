@@ -1,8 +1,8 @@
-## Corona statistics
+# Corona statistics
 Corona statistics for Sweden. Runs currently only with Python 3+.
 
 
-### How to run
+## How to run
  - Data from [Johns Hopkins CSSE](https://github.com/CSSEGISandData/COVID-19)
 ```
 $ ./corona.py
@@ -13,5 +13,5 @@ $ ./corona.py
 $ ./folk.py
 ```
 
-### Demo
+## Demo
 <img src="demo.gif" width="640">

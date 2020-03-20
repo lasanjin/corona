@@ -60,9 +60,13 @@ def get_data_thread(queue, data):
 
 
 def get_csv(dt):
-    url = api.URL(dt)
+    url = api.url(dt)
     res = request(url)
-    table = csv.reader(res.splitlines())
+
+    if res is not None:
+        table = csv.reader(res.splitlines())
+    else:
+        table = ''
 
     return table
 
@@ -85,17 +89,22 @@ def request(url):
     try:
         return urllib.request.urlopen(url).read().decode('utf-8')
 
+    # skip printing, because todays data may not be available yet
     except urllib.error.HTTPError as e:
-        print("HTTPError: {}".format(e.code))
+        #print("HTTPError: {}".format(e.code))
+        return
 
     except urllib.error.URLError as e:
-        print("URLError: {}".format(e.reason))
+        #print("URLError: {}".format(e.reason))
+        return
 
     except http.client.HTTPException as e:
-        print("HTTPException: {}".format(e))
+        #print("HTTPException: {}".format(e))
+        return
 
     except Exception as e:
-        print("Exception: {}".format(e))
+        #print("Exception: {}".format(e))
+        return
 
 
 def print_data(data):
@@ -131,7 +140,7 @@ class api:
         'csse_covid_19_data/csse_covid_19_daily_reports/'
 
     @staticmethod
-    def URL(date):
+    def url(date):
         return api.API + date + '.csv'
 
 
@@ -162,7 +171,7 @@ class color:
 class const:
     COUNTRY = 'Sweden'
     START_DATE = date(2020, 2, 1)
-    END_DATE = date(2020, 3, 18)
+    END_DATE = date.today()
     DATE_RANGE = daterange(START_DATE, END_DATE)
     MARK = '-'
     TABLE = '{:s}{:>15s}{:>22s}{:>22s}{:>22s}'
