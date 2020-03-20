@@ -173,11 +173,10 @@ class const:
     START_DATE = date(2020, 2, 1)
     END_DATE = date.today()
     DATE_RANGE = daterange(START_DATE, END_DATE)
-    MARK = '-'
     TABLE = '{:s}{:>15s}{:>22s}{:>22s}{:>22s}'
     HEADER = '{:s}{:>11s}{:>13s}{:>13s}{:>13s}'.format(
         "Date", "Time", "Confirmed", "Deaths", "Recovered")
-    LINE = MARK * len(HEADER.expandtabs())
+    LINE = '-' * len(HEADER.expandtabs())
 
 
 if __name__ == "__main__":
