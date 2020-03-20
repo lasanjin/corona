@@ -49,7 +49,8 @@ def get_data_thread(queue, data):
         for row in table:
             if row[1] == const.COUNTRY:
 
-                date = format_time(row[2])
+                # row[2] date is wrong in some cases (stick to date of csv)
+                date = format_time(dt)
                 n = row[3]
                 dead = row[4]
                 recovered = row[5]
@@ -72,16 +73,17 @@ def get_csv(dt):
 
 
 def format_time(time):
-    format = '%Y-%m-%dT%H:%M:%S'
+    format = '%m-%d-%Y'
+    # format = '%Y-%m-%dT%H:%M:%S'
     time = datetime \
         .strptime(time, format) \
-        .strftime('%y-%m-%d %H:%M')
+        .strftime('%y-%m-%d')
 
     return time
 
 
 def daterange(start, end):
-    for n in range(int((end - start).days)+1)[24:]:  # skip duplicates
+    for n in range(int((end - start).days)+1):
         yield start + timedelta(n)
 
 
@@ -113,14 +115,13 @@ def print_data(data):
 
     for data in sorted(data, key=lambda tup: tup[0]):
 
-        date = str(data[0]).partition(' ')
+        date = str(data[0])
         n = str(data[1])
         dead = str(data[2])
         recovered = str(data[3])
 
         print(const.TABLE.format(
-            date[0],
-            color.dim(date[2]),
+            date,
             color.blue(n),
             color.red(dead),
             color.green(recovered)))
@@ -173,9 +174,9 @@ class const:
     START_DATE = date(2020, 2, 1)
     END_DATE = date.today()
     DATE_RANGE = daterange(START_DATE, END_DATE)
-    TABLE = '{:s}{:>15s}{:>22s}{:>22s}{:>22s}'
-    HEADER = '{:s}{:>11s}{:>13s}{:>13s}{:>13s}'.format(
-        "Date", "Time", "Confirmed", "Deaths", "Recovered")
+    TABLE = '{:s}{:>22s}{:>22s}{:>22s}'
+    HEADER = '{:s}{:>17s}{:>13s}{:>13s}'.format(
+        "Date", "Confirmed", "Deaths", "Recovered")
     LINE = '-' * len(HEADER.expandtabs())
 
 
