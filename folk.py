@@ -12,12 +12,12 @@ def main():
     table = soup.find('table')
     tbody = table.find_all('tbody')
     tr = table.find_all('tr')
-    td = table.find_all('td')
 
     data = {}
     for i in tr[1:-1]:
-        place = i.select('td')[0].text
-        n = i.select('td')[1].text
+        td = i.select('td')
+        place = td[0].text
+        n = td[1].text
 
         data[place] = int(n)
 
