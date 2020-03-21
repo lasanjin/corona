@@ -13,7 +13,7 @@ def main():
     tbody = table.find_all('tbody')
     tr = table.find_all('tr')
 
-    data = {}
+    data = dict()
     for i in tr[1:-1]:
         td = i.select('td')
         place = td[0].text
@@ -32,13 +32,10 @@ def get_data():
 
 
 def print_data(data):
-    print()
-
     for v in sorted(data, key=data.get):
         print(const.FORMAT.format(v, data[v]))
 
     print(const.FORMAT.format("TOTALT", sum(data.values())))
-    print()
 
 
 class api:
