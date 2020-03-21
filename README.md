@@ -1,5 +1,5 @@
 # Corona statistics
-Corona statistics for Sweden. Runs currently only with Python 3+.
+Runs currently only with Python 3+.
 
 ## Demo
 <img src="demo.gif" width="640">
