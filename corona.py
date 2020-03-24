@@ -13,7 +13,11 @@ from datetime import datetime, timedelta, date
 from modules.sortedcontainers import SortedSet, SortedDict
 
 
+import time
+
+
 def main():
+
     cmd, s = get_params()
 
     if cmd == C.EMPTY:
@@ -109,8 +113,9 @@ def get_data_thread(queue, data, total):
 
         table = get_table(url)
         end = len(table[0])
+        start = end - 1  # only get latest data
 
-        for col in range(4, end):
+        for col in range(start, end):
             for row in table[1:]:
                 country = parse_country(row)
 
@@ -220,9 +225,12 @@ def print_countries(countries):
 def print_all(data, param):
     print_header(C.THEADER)
 
+    today, yesterday = get_date()
     for k, v in sort(data, param):
 
-        key = v.keys()[-1]
+        #        key = v.keys()[-1]
+
+        key = today if today in v else yesterday
         date = k
         n = v.get(key)[0]
         dead = v.get(key)[1]
