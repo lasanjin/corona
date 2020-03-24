@@ -1,6 +1,7 @@
 #!/usr/bin/python
 # -*- coding: utf-8 -*-
 
+import re
 import csv
 import http.client
 import urllib.error
@@ -8,90 +9,90 @@ from sys import argv
 import urllib.request
 from threading import Thread
 from queue import PriorityQueue
-from collections import OrderedDict
 from datetime import datetime, timedelta, date
 from modules.sortedcontainers import SortedSet, SortedDict
 
 
 def main():
-    p = get_params()
+    cmd, s = get_params()
 
-    if p == C.EMPTY:
-        print(C.HOWTO)
+    if cmd == C.EMPTY:
+        print(C.USAGE)
 
-    elif p == C.LIST:
+    elif cmd == C.COUNTRIES:
         list_countries()
 
-    elif p == C.SUM:
-        list_total_confirmed()
+    elif cmd == C.ALL:
+        list_all(s)
+
+    elif cmd == C.TOTAL:
+        list_total()
 
     else:
-        list_country(p)
+        list_country(cmd)
 
 
 def get_params():
     try:
-        return ' '.join(argv[1:]).lower()
+        cmd = argv[1:][0]
+
+        try:
+            s = argv[1:][1]
+
+        except IndexError:
+            return cmd, C.EMPTY
+
+        return cmd, s
+
     except IndexError:
-        return C.DEFAULT
-
-
-def list_country(country):
-    C.COUNTRY = country
-    data = get_data()
-    print_data(data)
+        return C.EMPTY, C.EMPTY
 
 
 def list_countries():
     cs = get_countries()
     print_countries(cs)
-    quit()
 
 
-def list_total_confirmed():
-    t = get_total_confirmed()
-    print_total_confirmed(t)
-    quit()
+def list_all(sort_by):
+    data = get_all()
+    print_all(data, sort_by)
+
+
+def list_total():
+    data = get_all(C.TOTAL)
+    print_total(data)
+
+
+def list_country(country):
+    C.COUNTRY = r'\b' + re.escape(country) + r'\b'
+    data = get_all()
+    print_country(data)
 
 
 def get_countries():
-    table = get_csv()
+    url = api.append_url(api.TC)
+    table = get_table(url)
     countries = SortedSet(key=str.lower)
 
     for row in table:
-        h, s, t = str(row[1]).strip('*').partition(',')
-        countries.add(h)
+        country = parse_country(row)
+        countries.add(country)
 
     return countries
 
 
-def get_total_confirmed():
-    table = list(get_csv())
-    total = []
-
-    end = len(table[0])
-    count = 0
-
-    for i in range(4, end):
-        for row in table[1:]:
-            count += int(row[i])
-
-        date = table[0][i]
-        time = format_time(date, C.format(2))
-        total.append((time, count))
-
-        count = 0
-
-    return total
+def parse_country(row):
+    h, s, t = str(row[1]).strip('*').partition(',')
+    return h
 
 
-def get_data():
+def get_all(total=None):
     data = SortedDict()
-    queue = build_queue()
+    queue = build_total_queue()
 
     for i in range(queue.qsize()):
-        thread = Thread(target=get_data_thread,
-                        args=(queue, data))
+        thread = Thread(target=get_all_thread,
+                        args=(queue, data, total))
         thread.daemon = True
         thread.start()
 
@@ -100,108 +101,111 @@ def get_data():
     return data
 
 
-def build_queue():
-    queue = PriorityQueue()
-
-    for dt in C.DATE_RANGE:
-        d = dt.strftime(C.format(0))
-        queue.put(d)
-
-    return queue
-
-
-def get_data_thread(queue, data):
+def get_all_thread(queue, data, total):
     while not queue.empty():
-        dt = queue.get()
+        q = queue.get()
+        category = q[0]
+        url = q[1]
 
-        table = get_csv(dt)
+        table = get_table(url)
+        end = len(table[0])
 
-        for row in table:
-            if str(row[1]).lower() == C.COUNTRY:
+        for col in range(4, end):
+            for row in table[1:]:
+                country = parse_country(row)
 
-                # row[2] date is wrong in some cases (stick to date of csv)
-                date = format_time(dt, C.format(0))
-                n = int(row[3])
-                dead = int(row[4])
-                recovered = int(row[5])
+                match = re.search(C.COUNTRY, country.lower())
+                if match:
 
-                append_data(data, date, n, dead, recovered)
+                    dt = table[0][col]
+                    date = format_date(dt, C.format('mdy'))
+
+                    try:
+                        n = int(row[col])
+                    except ValueError:
+                        pass
+
+                    append_data(total, data, category, country, date, n)
 
         queue.task_done()
 
 
-def append_data(data, date, n, dead, recovered):
-    if date in data:
-        data[date][0] += n
-        data[date][1] += dead
-        data[date][2] += recovered
+def append_data(total, data, category, country, date, n):
+    if total is None:
+        append_all(data, category, country, date, n)
     else:
-        data[date] = [n, dead, recovered]
+        append_total(data, category, date, n)
 
 
-def get_csv(dt=None):
-    url = api.stats(dt) if dt else api.countries()
+def append_all(data, category, country, date, n):
+    if country not in data:
+        data[country] = SortedDict()
+
+    if date not in data[country]:
+        data[country][date] = [0, 0, 0]
+
+    try:
+        data[country][date][category] += n
+    except TypeError:
+        pass
+
+
+def append_total(data, category, date, n):
+    if date not in data:
+        data[date] = [0, 0, 0]
+
+    data[date][category] += n
+
+
+def get_date():
+    t = date.today()
+    y = t - timedelta(days=1)
+
+    today = format_date(t, C.format('Ymd'))
+    yesterday = format_date(y, C.format('Ymd'))
+
+    return str(today), str(yesterday)
+
+
+def build_total_queue():
+    queue = PriorityQueue()
+
+    for i, url in enumerate(api.total_stats()):
+        queue.put((i, url))
+
+    return queue
+
+
+def get_table(url):
     res = request(url)
-    table = csv.reader(res.splitlines())
+    itr = csv.reader(res.splitlines())
 
-    return table
+    return list(itr)
 
 
-def format_time(time, format):
+def format_date(date, format):
     time = datetime \
-        .strptime(time, format) \
-        .strftime(C.format(1))
+        .strptime(str(date), format) \
+        .strftime(C.format('ymd'))
 
     return time
-
-
-def daterange(start, end):
-    for n in range(int((end - start).days) + 1):
-        yield start + timedelta(n)
 
 
 def request(url):
     try:
         return urllib.request.urlopen(url).read().decode('utf-8')
 
-    # return '', because todays data may not be available yet
     except urllib.error.HTTPError as e:
-        # print("HTTPError: {}".format(e.code))
-        return ''
+        print("HTTPError: {}".format(e.code))
 
     except urllib.error.URLError as e:
-        # print("URLError: {}".format(e.reason))
-        return ''
+        print("URLError: {}".format(e.reason))
 
     except http.client.HTTPException as e:
-        # print("HTTPException: {}".format(e))
-        return ''
+        print("HTTPException: {}".format(e))
 
     except Exception as e:
-        # print("Exception: {}".format(e))
-        return ''
-
-
-def print_data(data):
-    if not data:
-        print('{} "{}"'.format(
-            C.NO,
-            C.COUNTRY))
-    else:
-        print_header(C.HEADER)
-
-        for k, v in data.items():
-
-            date = k
-            n = v[0]
-            dead = v[1]
-            recovered = v[2]
-
-            print(C.TABLE.format(
-                date,
-                color.blue(n),
-                color.red(dead),
-                color.green(recovered)))
+        print("Exception: {}".format(e))
 
 
 def print_countries(countries):
@@ -213,13 +217,75 @@ def print_countries(countries):
             print(C.CTABLE.format(c, prev))
 
 
-def print_total_confirmed(total):
-    print_header(C.TOT_HEADER)
+def print_all(data, param):
+    print_header(C.THEADER)
 
-    for i in total:
-        print(C.TOT_TABLE.format(
-            color.dim(i[0]),
-            color.blue(i[1])))
+    for k, v in sort(data, param):
+
+        key = v.keys()[-1]
+        date = k
+        n = v.get(key)[0]
+        dead = v.get(key)[1]
+        recovered = v.get(key)[2]
+
+        print_elements(C.TTABLE, date, n, dead, recovered)
+
+
+def sort(data, param):
+    today, yesterday = get_date()
+    e = C.sort_by(param)
+
+    if e is not None:
+        return sorted(
+            data.items(),
+            key=lambda c: (
+                c[1].get(today)[e]
+                if today in c[1]
+                else c[1].get(yesterday)[e]))
+    else:
+        return data.items()
+
+
+def print_total(data):
+    print_header(C.HEADER)
+
+    for k, v in data.items():
+
+        date = k
+        n = v[0]
+        dead = v[1]
+        recovered = v[2]
+
+        print(C.TABLE.format(
+            date,
+            color.blue(n),
+            color.red(dead),
+            color.green(recovered)))
+
+
+def print_country(data):
+    if not data:
+        print(C.INVALID)
+    else:
+        print_header(C.HEADER)
+
+        for data in data.values():
+            for k, v in data.items():
+
+                date = k
+                n = v[0]
+                dead = v[1]
+                recovered = v[2]
+
+                print_elements(C.TABLE, date, n, dead, recovered)
+
+
+def print_elements(body, first, n, dead, recovered):
+    print(body.format(
+        first,
+        color.blue(n),
+        color.red(dead),
+        color.green(recovered)))
 
 
 def print_header(header):
@@ -232,16 +298,22 @@ def print_header(header):
 class api:
     URL = 'https://raw.githubusercontent.com/CSSEGISandData' \
         '/COVID-19/master/csse_covid_19_data'
-    STATS = '/csse_covid_19_daily_reports/'
-    COUNTRIES = '/csse_covid_19_time_series/time_series_19-covid-Confirmed.csv'
+
+    TS = '/csse_covid_19_time_series/'
+    TC = 'time_series_19-covid-Confirmed.csv'
+    TD = 'time_series_19-covid-Deaths.csv'
+    TR = 'time_series_19-covid-Recovered.csv'
 
     @staticmethod
-    def stats(date):
-        return api.URL + api.STATS + date + '.csv'
+    def append_url(path):
+        return api.URL + api.TS + path
 
     @staticmethod
-    def countries():
-        return api.URL + api.COUNTRIES
+    def total_stats():
+        return [
+            api.append_url(api.TC),
+            api.append_url(api.TD),
+            api.append_url(api.TR)]
 
 
 class color:
@@ -270,29 +342,43 @@ class color:
 
 class C:
     EMPTY = ''
-    HOWTO = './corona.py [-s|-l|<country>]'
-    LIST = '-l'
-    SUM = '-s'
-    DEFAULT = 'sweden'
-    COUNTRY = None
-    NO = 'No data on:'
-    START_DATE = date(2020, 2, 1)
-    END_DATE = date.today()
-    DATE_RANGE = daterange(START_DATE, END_DATE)
+    COUNTRIES = '-l'
+    ALL = '-a'
+    TOTAL = '-t'
+    COUNTRY = r'.'
+    INVALID = 'INVALID COUNTRY'
+    USAGE = 'usage: ./corona.py [-l | -a [c|d|r] | COUNTRY]'
+
     HEADER = '{:s}{:>17s}{:>13s}{:>13s}'.format(
         "Date", "Confirmed", "Deaths", "Recovered")
     TABLE = '{:s}{:>22s}{:>22s}{:>22s}'
+
+    THEADER = '{:<23s}{:>23s}{:>13s}{:>13s}'.format(
+        "Country", "Confirmed", "Deaths", "Recovered")
+    TTABLE = '{:<33s}{:>22s}{:>22s}{:>22s}'
+
     CTABLE = '{:<40s}{:<40s}'
-    TOT_TABLE = '{:<20s}{:>20s}'
-    TOT_HEADER = '{:s}{:>19s}'.format("Date", "Confirmed")
 
     @staticmethod
     def format(arg):
         return {
-            0: '%m-%d-%Y',
-            1: '%y-%m-%d',
-            2: '%m/%d/%y'
+            'mdY': '%m-%d-%Y',
+            'mdy': '%m/%d/%y',
+            'Ymd': '%Y-%m-%d',
+            'ymd': '%y-%m-%d'
         }[arg]
+
+    @staticmethod
+    def sort_by(arg):
+        try:
+            return {
+                'c': 0,
+                'd': 1,
+                'r': 2
+            }[arg]
+
+        except KeyError:
+            return None
 
     @staticmethod
     def header(head):
