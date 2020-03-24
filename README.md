@@ -8,12 +8,17 @@ Corona statistics for Sweden. Runs currently only with Python 3+.
 Data from [Johns Hopkins CSSE](https://github.com/CSSEGISandData/COVID-19)
 
 ```
-$ ./corona.py [-l | -a [c|d|r] | COUNTRY]
+$ ./corona.py [-l | -t | -a [c|d|r] | COUNTRY]
 ```
 
  - List countries
 ```
 $ ./corona.py -l
+```
+
+ - List global data
+```
+$ ./corona.py -g
 ```
 
  - List latest data for all countries and sort by $1:

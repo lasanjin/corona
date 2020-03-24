@@ -25,7 +25,7 @@ def main():
     elif cmd == C.ALL:
         list_all(s)
 
-    elif cmd == C.TOTAL:
+    elif cmd == C.GLOBAL:
         list_total()
 
     else:
@@ -54,18 +54,18 @@ def list_countries():
 
 
 def list_all(sort_by):
-    data = get_all()
+    data = get_data()
     print_all(data, sort_by)
 
 
 def list_total():
-    data = get_all(C.TOTAL)
+    data = get_data(C.GLOBAL)
     print_total(data)
 
 
 def list_country(country):
     C.COUNTRY = r'\b' + re.escape(country) + r'\b'
-    data = get_all()
+    data = get_data()
     print_country(data)
 
 
@@ -86,12 +86,12 @@ def parse_country(row):
     return h
 
 
-def get_all(total=None):
+def get_data(total=None):
     data = SortedDict()
     queue = build_total_queue()
 
     for i in range(queue.qsize()):
-        thread = Thread(target=get_all_thread,
+        thread = Thread(target=get_data_thread,
                         args=(queue, data, total))
         thread.daemon = True
         thread.start()
@@ -101,7 +101,7 @@ def get_all(total=None):
     return data
 
 
-def get_all_thread(queue, data, total):
+def get_data_thread(queue, data, total):
     while not queue.empty():
         q = queue.get()
         category = q[0]
@@ -344,10 +344,10 @@ class C:
     EMPTY = ''
     COUNTRIES = '-l'
     ALL = '-a'
-    TOTAL = '-t'
+    GLOBAL = '-g'
     COUNTRY = r'.'
     INVALID = 'INVALID COUNTRY'
-    USAGE = 'usage: ./corona.py [-l | -a [c|d|r] | COUNTRY]'
+    USAGE = 'usage: ./corona.py [-l | -g | -a [c|d|r] | COUNTRY]'
 
     HEADER = '{:s}{:>17s}{:>13s}{:>13s}'.format(
         "Date", "Confirmed", "Deaths", "Recovered")
