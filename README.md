@@ -8,7 +8,7 @@ Corona statistics for Sweden. Runs currently only with Python 3+.
 Data from [Johns Hopkins CSSE](https://github.com/CSSEGISandData/COVID-19)
 
 ```
-$ ./corona.py [-l | -t | -a [c|d|r] | COUNTRY]
+$ ./corona.py [-l | -g | -a [c|d|r] | COUNTRY]
 ```
 
  - List countries
