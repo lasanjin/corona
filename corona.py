@@ -13,11 +13,7 @@ from datetime import datetime, timedelta, date
 from modules.sortedcontainers import SortedSet, SortedDict
 
 
-import time
-
-
 def main():
-
     cmd, s = get_params()
 
     if cmd == C.EMPTY:
@@ -30,7 +26,7 @@ def main():
         list_all(s)
 
     elif cmd == C.GLOBAL:
-        list_total()
+        list_global()
 
     else:
         list_country(cmd)
@@ -54,22 +50,26 @@ def get_params():
 
 def list_countries():
     cs = get_countries()
+
     print_countries(cs)
 
 
 def list_all(sort_by):
-    data = get_data()
+    data = get_data(False)
+
     print_all(data, sort_by)
 
 
-def list_total():
-    data = get_data(C.GLOBAL)
-    print_total(data)
+def list_global():
+    data = get_data(True, True)
+
+    print_global(data)
 
 
 def list_country(country):
-    C.COUNTRY = r'\b' + re.escape(country) + r'\b'
-    data = get_data()
+    c = C.regex(country)
+    data = get_data(True, False, c)
+
     print_country(data)
 
 
@@ -90,13 +90,13 @@ def parse_country(row):
     return h
 
 
-def get_data(total=None):
+def get_data(ALL=True, GLOBAL=False, COUNTRY=None):
     data = SortedDict()
-    queue = build_total_queue()
+    queue = build_queue()
 
     for i in range(queue.qsize()):
         thread = Thread(target=get_data_thread,
-                        args=(queue, data, total))
+                        args=(queue, data, ALL, GLOBAL, COUNTRY))
         thread.daemon = True
         thread.start()
 
@@ -105,21 +105,32 @@ def get_data(total=None):
     return data
 
 
-def get_data_thread(queue, data, total):
+def build_queue():
+    queue = PriorityQueue()
+
+    for i, url in enumerate(api.urls()):
+        queue.put((i, url))
+
+    return queue
+
+
+def get_data_thread(queue, data, ALL, GLOBAL, COUNTRY):
     while not queue.empty():
         q = queue.get()
         category = q[0]
         url = q[1]
 
         table = get_table(url)
+        c = r'.' if COUNTRY is None else COUNTRY
+
         end = len(table[0])
-        start = end - 1  # only get latest data
+        start = end - 2 if not ALL else 4  # only get latest data
 
         for col in range(start, end):
             for row in table[1:]:
                 country = parse_country(row)
 
-                match = re.search(C.COUNTRY, country.lower())
+                match = re.search(c, country.lower())
                 if match:
 
                     dt = table[0][col]
@@ -130,16 +141,16 @@ def get_data_thread(queue, data, total):
                     except ValueError:
                         pass
 
-                    append_data(total, data, category, country, date, n)
+                    append_data(GLOBAL, data, category, country, date, n)
 
         queue.task_done()
 
 
-def append_data(total, data, category, country, date, n):
-    if total is None:
-        append_all(data, category, country, date, n)
+def append_data(GLOBAL, data, category, country, date, n):
+    if GLOBAL:
+        append_global(data, category, date, n)
     else:
-        append_total(data, category, date, n)
+        append_all(data, category, country, date, n)
 
 
 def append_all(data, category, country, date, n):
@@ -155,30 +166,11 @@ def append_all(data, category, country, date, n):
         pass
 
 
-def append_total(data, category, date, n):
+def append_global(data, category, date, n):
     if date not in data:
         data[date] = [0, 0, 0]
 
     data[date][category] += n
-
-
-def get_date():
-    t = date.today()
-    y = t - timedelta(days=1)
-
-    today = format_date(t, C.format('Ymd'))
-    yesterday = format_date(y, C.format('Ymd'))
-
-    return str(today), str(yesterday)
-
-
-def build_total_queue():
-    queue = PriorityQueue()
-
-    for i, url in enumerate(api.total_stats()):
-        queue.put((i, url))
-
-    return queue
 
 
 def get_table(url):
@@ -225,36 +217,29 @@ def print_countries(countries):
 def print_all(data, param):
     print_header(C.THEADER)
 
-    today, yesterday = get_date()
-    for k, v in sort(data, param):
+    key = data.values()[-1].keys()[-1]
+    for k, v in sort(data, param, key):
 
-        #        key = v.keys()[-1]
-
-        key = today if today in v else yesterday
         date = k
-        n = v.get(key)[0]
-        dead = v.get(key)[1]
-        recovered = v.get(key)[2]
+        n = v[key][0]
+        dead = v[key][1]
+        recovered = v[key][2]
 
         print_elements(C.TTABLE, date, n, dead, recovered)
 
 
-def sort(data, param):
-    today, yesterday = get_date()
+def sort(data, param, key):
     e = C.sort_by(param)
 
     if e is not None:
         return sorted(
             data.items(),
-            key=lambda c: (
-                c[1].get(today)[e]
-                if today in c[1]
-                else c[1].get(yesterday)[e]))
+            key=lambda c: (c[1][key][e]))
     else:
         return data.items()
 
 
-def print_total(data):
+def print_global(data):
     print_header(C.HEADER)
 
     for k, v in data.items():
@@ -264,11 +249,7 @@ def print_total(data):
         dead = v[1]
         recovered = v[2]
 
-        print(C.TABLE.format(
-            date,
-            color.blue(n),
-            color.red(dead),
-            color.green(recovered)))
+        print_elements(C.TABLE, date, n, dead, recovered)
 
 
 def print_country(data):
@@ -317,7 +298,7 @@ class api:
         return api.URL + api.TS + path
 
     @staticmethod
-    def total_stats():
+    def urls():
         return [
             api.append_url(api.TC),
             api.append_url(api.TD),
@@ -366,6 +347,10 @@ class C:
     TTABLE = '{:<33s}{:>22s}{:>22s}{:>22s}'
 
     CTABLE = '{:<40s}{:<40s}'
+
+    @staticmethod
+    def regex(c):
+        return r'\b' + re.escape(c) + r'\b'
 
     @staticmethod
     def format(arg):
