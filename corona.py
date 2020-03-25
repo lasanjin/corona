@@ -38,7 +38,6 @@ def get_params():
 
         try:
             s = argv[1:][1]
-
         except IndexError:
             return cmd, C.EMPTY
 
@@ -75,7 +74,7 @@ def list_country(country):
 
 def get_countries():
     url = api.append_url(api.TC)
-    table = get_table(url)
+    table = get_table(url, False)
     countries = SortedSet(key=str.lower)
 
     for row in table:
@@ -87,6 +86,7 @@ def get_countries():
 
 def parse_country(row):
     h, s, t = str(row[1]).strip('*').partition(',')
+
     return h
 
 
@@ -124,7 +124,7 @@ def get_data_thread(queue, data, ALL, GLOBAL, COUNTRY):
         c = r'.' if COUNTRY is None else COUNTRY
 
         end = len(table[0])
-        start = end - 2 if not ALL else 4  # only get latest data
+        start = end - 2 if not ALL else 4  # get only latest data
 
         for col in range(start, end):
             for row in table[1:]:
@@ -173,11 +173,11 @@ def append_global(data, category, date, n):
     data[date][category] += n
 
 
-def get_table(url):
+def get_table(url, LIST=True):
     res = request(url)
     itr = csv.reader(res.splitlines())
 
-    return list(itr)
+    return list(itr) if LIST else itr
 
 
 def format_date(date, format):
@@ -215,9 +215,9 @@ def print_countries(countries):
 
 
 def print_all(data, param):
-    print_header(C.THEADER)
+    print_header(C.GHEADER)
 
-    key = data.values()[-1].keys()[-1]
+    key = data.values()[-1].keys()[-1]  # get latest date
     for k, v in sort(data, param, key):
 
         date = k
@@ -225,7 +225,7 @@ def print_all(data, param):
         dead = v[key][1]
         recovered = v[key][2]
 
-        print_elements(C.TTABLE, date, n, dead, recovered)
+        print_elements(C.GTABLE, date, n, dead, recovered)
 
 
 def sort(data, param, key):
@@ -342,9 +342,9 @@ class C:
         "Date", "Confirmed", "Deaths", "Recovered")
     TABLE = '{:s}{:>22s}{:>22s}{:>22s}'
 
-    THEADER = '{:<23s}{:>23s}{:>13s}{:>13s}'.format(
+    GHEADER = '{:<23s}{:>23s}{:>13s}{:>13s}'.format(
         "Country", "Confirmed", "Deaths", "Recovered")
-    TTABLE = '{:<33s}{:>22s}{:>22s}{:>22s}'
+    GTABLE = '{:<33s}{:>22s}{:>22s}{:>22s}'
 
     CTABLE = '{:<40s}{:<40s}'
 
