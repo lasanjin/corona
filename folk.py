@@ -6,7 +6,20 @@ from modules import requests
 
 
 def main():
-    page = get_data()
+    page = get_page()
+    data = parse_data(page)
+
+    print_data(data)
+
+
+def get_page():
+    url = api.API
+    page = requests.get(url)
+
+    return page
+
+
+def parse_data(page):
     soup = BeautifulSoup(page.content, 'html.parser')
 
     table = soup.find('table')
@@ -14,28 +27,36 @@ def main():
     tr = table.find_all('tr')
 
     data = dict()
-    for i in tr[1:-1]:
+    for i in tr[1:]:
         td = i.select('td')
-        place = td[0].text
-        n = td[1].text
 
-        data[place] = int(n)
+        region = td[0].text
+        n = td[1].text.replace(' ', '')
+        d = td[4].text
 
-    print_data(data)
+        data[region] = [int(n), int(d)]
 
-
-def get_data():
-    url = api.API
-    page = requests.get(url)
-
-    return page
+    return data
 
 
 def print_data(data):
-    for v in sorted(data, key=data.get):
-        print(const.FORMAT.format(v, data[v]))
+    print_header()
 
-    print(const.FORMAT.format("TOTALT", sum(data.values())))
+    for k, v in sorted(data.items(), key=lambda k: k[1][0]):
+        print(
+            C.TABLE.format(
+                k,
+                color.blue(v[0]),
+                color.red(v[1])))
+
+
+def print_header():
+    line = C.line(C.HEADER)
+    head = C.HEADER
+
+    print(color.dim(line))
+    print(color.dim(head))
+    print(color.dim(line))
 
 
 class api:
@@ -44,8 +65,38 @@ class api:
         'covid-19/aktuellt-epidemiologiskt-lage/'
 
 
-class const:
-    FORMAT = '{:<15s}{:>10d}'
+class C:
+    TABLE = '{:<15s}{:>19s}{:>19s}'
+    HEADER = '{:<15s}{:>10s}{:>10s}'.format(
+        'Region', 'Fall', 'Avlidna')
+
+    @staticmethod
+    def line(head):
+        return '-' * len(head.expandtabs())
+
+
+class color:
+    DEFAULT = '\033[0m'
+    GREEN = '\033[92m'
+    BLUE = '\033[94m'
+    RED = '\033[91m'
+    DIM = '\033[2m'
+
+    @staticmethod
+    def dim(output):
+        return color.DIM + str(output) + color.DEFAULT
+
+    @staticmethod
+    def green(output):
+        return color.GREEN + str(output) + color.DEFAULT
+
+    @staticmethod
+    def blue(output):
+        return color.BLUE + str(output) + color.DEFAULT
+
+    @staticmethod
+    def red(output):
+        return color.RED + str(output) + color.DEFAULT
 
 
 if __name__ == "__main__":
