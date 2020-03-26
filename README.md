@@ -40,3 +40,16 @@ Data from [Folkhälsomydigheten](https://www.folkhalsomyndigheten.se/smittskydd-
 ```
 $ ./folk.py
 ```
+
+</br>
+
+Forecast based on exponential growth (requires `numpy` and `scipy`)
+ - Global forecast
+```
+$ ./forecast
+```
+
+ - Country forecast
+```
+$ ./forecast <country>
+```

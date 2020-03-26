@@ -34,7 +34,7 @@ def main():
 
 def get_params():
     try:
-        cmd = argv[1:][0].lower()
+        cmd = argv[1:][0]
 
         try:
             s = argv[1:][1]
@@ -349,7 +349,7 @@ class C:
 
     @staticmethod
     def regex(c):
-        return r'\b' + re.escape(c) + r'\b'
+        return r'\b' + re.escape(str(c).lower()) + r'\b'
 
     @staticmethod
     def format(arg):
