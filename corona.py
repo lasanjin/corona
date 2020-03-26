@@ -34,7 +34,7 @@ def main():
 
 def get_params():
     try:
-        cmd = argv[1:][0]
+        cmd = argv[1:][0].lower()
 
         try:
             s = argv[1:][1]
