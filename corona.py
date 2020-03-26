@@ -134,7 +134,7 @@ def get_data_thread(queue, data, ALL, GLOBAL, COUNTRY):
                 if match:
 
                     dt = table[0][col]
-                    date = format_date(dt, C.format('mdy'))
+                    date = parse_date(dt)  # csv files look different
 
                     try:
                         n = int(row[col])
@@ -144,6 +144,14 @@ def get_data_thread(queue, data, ALL, GLOBAL, COUNTRY):
                     append_data(GLOBAL, data, category, country, date, n)
 
         queue.task_done()
+
+
+def parse_date(dt):
+    f = C.format('mdy')
+    try:
+        return format_date(dt, f[0])
+    except ValueError:
+        return format_date(dt, f[1])
 
 
 def append_data(GLOBAL, data, category, country, date, n):
@@ -217,24 +225,39 @@ def print_countries(countries):
 def print_all(data, param):
     print_header(C.GHEADER)
 
-    key = data.values()[-1].keys()[-1]  # get latest date
-    for k, v in sort(data, param, key):
+    keys = find_keys(data)
+    for k, v in sort(data, param, keys):
 
-        date = k
+        key = v.keys()[-1]
+
+        first = k
         n = v[key][0]
         dead = v[key][1]
         recovered = v[key][2]
 
-        print_elements(C.GTABLE, date, n, dead, recovered)
+        print_elements(C.GTABLE, first, n, dead, recovered)
 
 
-def sort(data, param, key):
+# because csv files are not synced (dates)
+def find_keys(data):
+    keys = []
+    v = data.values()[-1]
+    for i in range(-2, 0):
+        keys.append(v.keys()[i])
+
+    return keys
+
+
+def sort(data, param, keys):
     e = C.sort_by(param)
 
     if e is not None:
         return sorted(
             data.items(),
-            key=lambda c: (c[1][key][e]))
+            key=lambda c: (
+                c[1][keys[0]][e]
+                if keys[0] in c[1]
+                else c[1][keys[1]][e]))
     else:
         return data.items()
 
@@ -289,9 +312,9 @@ class api:
         '/COVID-19/master/csse_covid_19_data'
 
     TS = '/csse_covid_19_time_series/'
-    TC = 'time_series_19-covid-Confirmed.csv'
-    TD = 'time_series_19-covid-Deaths.csv'
-    TR = 'time_series_19-covid-Recovered.csv'
+    TC = 'time_series_covid19_confirmed_global.csv'
+    TD = 'time_series_covid19_deaths_global.csv'
+    TR = 'time_series_covid19_recovered_global.csv'
 
     @staticmethod
     def append_url(path):
@@ -303,30 +326,6 @@ class api:
             api.append_url(api.TC),
             api.append_url(api.TD),
             api.append_url(api.TR)]
-
-
-class color:
-    DEFAULT = '\033[0m'
-    GREEN = '\033[92m'
-    BLUE = '\033[94m'
-    RED = '\033[91m'
-    DIM = '\033[2m'
-
-    @staticmethod
-    def dim(output):
-        return color.DIM + str(output) + color.DEFAULT
-
-    @staticmethod
-    def green(output):
-        return color.GREEN + str(output) + color.DEFAULT
-
-    @staticmethod
-    def blue(output):
-        return color.BLUE + str(output) + color.DEFAULT
-
-    @staticmethod
-    def red(output):
-        return color.RED + str(output) + color.DEFAULT
 
 
 class C:
@@ -356,7 +355,7 @@ class C:
     def format(arg):
         return {
             'mdY': '%m-%d-%Y',
-            'mdy': '%m/%d/%y',
+            'mdy': ['%m/%d/%y', '%m/%d/%Y'],
             'Ymd': '%Y-%m-%d',
             'ymd': '%y-%m-%d'
         }[arg]
@@ -380,6 +379,30 @@ class C:
     @staticmethod
     def line(head):
         return '-' * len(head.expandtabs())
+
+
+class color:
+    DEFAULT = '\033[0m'
+    GREEN = '\033[92m'
+    BLUE = '\033[94m'
+    RED = '\033[91m'
+    DIM = '\033[2m'
+
+    @staticmethod
+    def dim(output):
+        return color.DIM + str(output) + color.DEFAULT
+
+    @staticmethod
+    def green(output):
+        return color.GREEN + str(output) + color.DEFAULT
+
+    @staticmethod
+    def blue(output):
+        return color.BLUE + str(output) + color.DEFAULT
+
+    @staticmethod
+    def red(output):
+        return color.RED + str(output) + color.DEFAULT
 
 
 if __name__ == "__main__":
