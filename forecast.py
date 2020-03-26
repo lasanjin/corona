@@ -20,7 +20,7 @@ def main():
 
     a, k, b, dates = get_function(data, country)
     ndays = 0  # ndays forecast
-    _b = b  # b-value in exp function
+    _b = 0  # b-value in exp function
 
     print_function(a, k, dates, _b)
     print_forecast(a, k, dates, ndays, _b)
@@ -42,7 +42,7 @@ def get_function(data, country):
     xarr = []
     yarr = []
     dates = []
-    x = 0
+    x = 1
 
     for k, v in data.items():
         y = int(v[0])
