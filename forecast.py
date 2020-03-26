@@ -19,11 +19,11 @@ def main():
         data = corona.get_data(True, True, c)
 
     a, k, b, dates = get_function(data, country)
+    ndays = 0  # ndays forecast
+    _b = b  # b-value in exp function
 
-    print_function(a, k, dates, b)
-
-    ndays = 0
-    print_forecast(a, k, dates, ndays, b)
+    print_function(a, k, dates, _b)
+    print_forecast(a, k, dates, ndays, _b)
 
 
 def get_params():
