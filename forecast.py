@@ -19,7 +19,7 @@ def main():
         data = corona.get_data(True, True, c)
 
     a, k, b, dates = get_function(data, country)
-    ndays = 0  # ndays forecast
+    ndays = 7  # ndays forecast
     _b = 0  # b-value in exp function
 
     print_function(a, k, dates, _b)
@@ -66,7 +66,7 @@ def get_function(data, country):
 
 
 def print_function(a, k, dates, b=0):
-    print('{}e^({}x) + {}'.format(a, k, b))  # a*e^(x*k)+b
+    print('{}e^({}x)+{}'.format(a, k, b))  # a*e^(x*k)+b
     print()
 
 
