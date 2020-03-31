@@ -40,7 +40,7 @@ $ ./corona.py <country>
 </br>
 
 
-Forecast based on exponential growth (requires `numpy` and `scipy`)
+**Forecast** based on exponential growth (requires `numpy` and `scipy`)
  - Global forecast
 ```
 $ ./forecast
