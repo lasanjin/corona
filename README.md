@@ -1,8 +1,10 @@
 # Corona statistics
 Corona statistics. Runs currently only with Python 3+.
 
+
 ## Demo
-<img src="demo.gif" width="640">
+<img src="demo.gif" width="800">
+
 
 ## How to run
 Data from [Johns Hopkins CSSE](https://github.com/CSSEGISandData/COVID-19)
@@ -34,14 +36,9 @@ $ ./corona.py -a $1
 $ ./corona.py <country>
 ```
 
-</br>
-
-Data from [Folkhälsomydigheten](https://www.folkhalsomyndigheten.se/smittskydd-beredskap/utbrott/aktuella-utbrott/covid-19/aktuellt-epidemiologiskt-lage/)
-```
-$ ./folk.py
-```
 
 </br>
+
 
 Forecast based on exponential growth (requires `numpy` and `scipy`)
  - Global forecast
