@@ -223,7 +223,7 @@ def print_countries(countries):
 
 
 def print_all(data, param):
-    print_header(C.GHEADER)
+    print_header(C.AHEADER)
 
     keys = find_keys(data)
     for k, v in sort(data, param, keys):
@@ -235,7 +235,7 @@ def print_all(data, param):
         dead = v[key][1]
         recovered = v[key][2]
 
-        print_elements(C.GTABLE, first, n, dead, recovered)
+        print_elements(C.ATABLE, first, n, dead, recovered)
 
 
 # because csv files are not synced (dates)
@@ -263,8 +263,9 @@ def sort(data, param, keys):
 
 
 def print_global(data):
-    print_header(C.HEADER)
+    print_header(C.GHEADER)
 
+    prev = [0] * 3
     for k, v in data.items():
 
         date = k
@@ -272,24 +273,26 @@ def print_global(data):
         dead = v[1]
         recovered = v[2]
 
-        print_elements(C.TABLE, date, n, dead, recovered)
+        print_elements_incr(prev, date, n, dead, recovered)
+        # print_elements(C.TABLE, date, n, dead, recovered)
 
 
 def print_country(data):
     if not data:
         print(C.INVALID)
     else:
-        print_header(C.HEADER)
-
+        print_header(C.GHEADER)
+        prev = [0] * 3
         for data in data.values():
             for k, v in data.items():
-
                 date = k
                 n = v[0]
                 dead = v[1]
                 recovered = v[2]
 
-                print_elements(C.TABLE, date, n, dead, recovered)
+                print_elements_incr(prev, date, n, dead, recovered)
+
+                # print_elements(C.TABLE, date, n, dead, recovered)
 
 
 def print_elements(body, first, n, dead, recovered):
@@ -298,6 +301,25 @@ def print_elements(body, first, n, dead, recovered):
         color.blue(n),
         color.red(dead),
         color.green(recovered)))
+
+
+def print_elements_incr(prev, date, n, dead, recovered):
+    new_n = n - prev[0]
+    new_d = dead - prev[1]
+    new_r = recovered - prev[2]
+
+    print(C.GTABLE.format(
+        date,
+        color.blue(n),
+        color.dim(new_n, '+'),
+        color.red(dead),
+        color.dim(new_d, '+'),
+        color.green(recovered),
+        color.dim(new_r, '+')))
+
+    prev[0] = n
+    prev[1] = dead
+    prev[2] = recovered
 
 
 def print_header(header):
@@ -341,11 +363,15 @@ class C:
         "Date", "Confirmed", "Deaths", "Recovered")
     TABLE = '{:s}{:>22s}{:>22s}{:>22s}'
 
-    GHEADER = '{:<23s}{:>23s}{:>13s}{:>13s}'.format(
+    AHEADER = '{:<23s}{:>23s}{:>13s}{:>13s}'.format(
         "Country", "Confirmed", "Deaths", "Recovered")
-    GTABLE = '{:<33s}{:>22s}{:>22s}{:>22s}'
+    ATABLE = '{:<33s}{:>22s}{:>22s}{:>22s}'
 
     CTABLE = '{:<40s}{:<40s}'
+
+    GTABLE = '{:<15}{:>16}{:>19}{:>20}{:>19}{:>20}{:>19}'
+    GHEADER = '{:<11s}{:>11s}{:>11s}{:>11s}{:>11s}{:>11s}{:>11s}'.format(
+        "Date", "Confirmed", "C. New", "Deaths", "D. New", "Recovered", "R. New")
 
     @staticmethod
     def regex(c):
@@ -389,8 +415,8 @@ class color:
     DIM = '\033[2m'
 
     @staticmethod
-    def dim(output):
-        return color.DIM + str(output) + color.DEFAULT
+    def dim(output, pre=None):
+        return color.DIM + ('' if pre is None else pre) + str(output) + color.DEFAULT
 
     @staticmethod
     def green(output):
