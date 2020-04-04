@@ -229,17 +229,18 @@ def print_all(data, param):
     keys = find_keys(data)
     for k, v in sort(data, param, keys):
 
-        last_date = v.keys()[-1]
-        before_date = v.keys()[-1]
+        dates = v.keys()
+        last_date = dates[-1]
+        before_date = dates[-2]
 
         first = k
         n = v[last_date][0]
         dead = v[last_date][1]
         recovered = v[last_date][2]
 
-        new_n = v[before_date][0]
-        new_d = v[before_date][1]
-        new_r = v[before_date][2]
+        new_n = n - v[before_date][0]
+        new_d = dead - v[before_date][1]
+        new_r = recovered - v[before_date][2]
 
         print_incr(first, n, new_n, dead, new_d, recovered, new_r)
         # print_elements(C.ATABLE, first, n, dead, recovered)
