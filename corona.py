@@ -324,14 +324,26 @@ def print_elements_incr(prev, date, n, dead, recovered):
 
 def print_incr(first, n, new_n, dead, new_d, recovered, new_r, ALL=False):
     f = C.A2TABLE if ALL else C.GTABLE
+    p = calc_percentage(n, dead)
+
     print(f.format(
         first,
         color.blue(n),
         color.dim(new_n, '+'),
-        color.red(dead),
+        color.red(str(dead)),
+        color.dim(str(p) + "%"),
         color.dim(new_d, '+'),
         color.green(recovered),
         color.dim(new_r, '+')))
+
+
+def calc_percentage(n, dead):
+    try:
+        p = round(100*dead/n, 1)
+        return 0 if p == 0.0 else p
+
+    except ZeroDivisionError as e:
+        return 0
 
 
 def print_header(header):
@@ -381,13 +393,13 @@ class C:
 
     CTABLE = '{:<40s}{:<40s}'
 
-    GTABLE = '{:<15}{:>16}{:>19}{:>20}{:>19}{:>20}{:>19}'
-    GHEADER = '{:<11s}{:>11s}{:>11s}{:>11s}{:>11s}{:>11s}{:>11s}'.format(
-        "Date", "Confirmed", "C. New", "Deaths", "D. New", "Recovered", "R. New")
+    GTABLE = '{:<15}{:>16}{:>19}{:>20}{:>15}{:>19}{:>20}{:>19}'
+    GHEADER = '{:<11s}{:>11s}{:>11s}{:>11s}{:>7}{:>11s}{:>11s}{:>11s}'.format(
+        "Date", "Confirmed", "C. New", "Deaths", "%", "D. New", "Recovered", "R. New")
 
-    A2TABLE = '{:<32}{:>16}{:>19}{:>20}{:>19}{:>20}{:>19}'
-    A2HEADER = '{:<28s}{:>11s}{:>11s}{:>11s}{:>11s}{:>11s}{:>11s}'.format(
-        "Date", "Confirmed", "C. New", "Deaths", "D. New", "Recovered", "R. New")
+    A2TABLE = '{:<32}{:>16}{:>19}{:>20}{:>15}{:>19}{:>20}{:>19}'
+    A2HEADER = '{:<28s}{:>11s}{:>11s}{:>11s}{:>7}{:>11s}{:>11s}{:>11s}'.format(
+        "Date", "Confirmed", "C. New", "Deaths", "%", "D. New", "Recovered", "R. New")
 
     @staticmethod
     def regex(c):
