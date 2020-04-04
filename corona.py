@@ -225,17 +225,24 @@ def print_countries(countries):
 def print_all(data, param):
     print_header(C.AHEADER)
 
+    prev = [0] * 3
     keys = find_keys(data)
     for k, v in sort(data, param, keys):
 
-        key = v.keys()[-1]
+        last_date = v.keys()[-1]
+        before_date = v.keys()[-1]
 
         first = k
-        n = v[key][0]
-        dead = v[key][1]
-        recovered = v[key][2]
+        n = v[last_date][0]
+        dead = v[last_date][1]
+        recovered = v[last_date][2]
 
-        print_elements(C.ATABLE, first, n, dead, recovered)
+        new_n = v[before_date][0]
+        new_d = v[before_date][1]
+        new_r = v[before_date][2]
+
+        print_incr(first, n, new_n, dead, new_d, recovered, new_r)
+        # print_elements(C.ATABLE, first, n, dead, recovered)
 
 
 # because csv files are not synced (dates)
@@ -291,7 +298,6 @@ def print_country(data):
                 recovered = v[2]
 
                 print_elements_incr(prev, date, n, dead, recovered)
-
                 # print_elements(C.TABLE, date, n, dead, recovered)
 
 
@@ -308,18 +314,22 @@ def print_elements_incr(prev, date, n, dead, recovered):
     new_d = dead - prev[1]
     new_r = recovered - prev[2]
 
+    print_incr(date, n, new_n, dead, new_d, recovered, new_r)
+
+    prev[0] = n
+    prev[1] = dead
+    prev[2] = recovered
+
+
+def print_incr(first, n, new_n, dead, new_d, recovered, new_r):
     print(C.GTABLE.format(
-        date,
+        first,
         color.blue(n),
         color.dim(new_n, '+'),
         color.red(dead),
         color.dim(new_d, '+'),
         color.green(recovered),
         color.dim(new_r, '+')))
-
-    prev[0] = n
-    prev[1] = dead
-    prev[2] = recovered
 
 
 def print_header(header):
