@@ -223,7 +223,7 @@ def print_countries(countries):
 
 
 def print_all(data, param):
-    print_header(C.AHEADER)
+    print_header(C.A2HEADER)
 
     prev = [0] * 3
     keys = find_keys(data)
@@ -242,7 +242,7 @@ def print_all(data, param):
         new_d = dead - v[before_date][1]
         new_r = recovered - v[before_date][2]
 
-        print_incr(first, n, new_n, dead, new_d, recovered, new_r)
+        print_incr(first, n, new_n, dead, new_d, recovered, new_r, True)
         # print_elements(C.ATABLE, first, n, dead, recovered)
 
 
@@ -322,8 +322,9 @@ def print_elements_incr(prev, date, n, dead, recovered):
     prev[2] = recovered
 
 
-def print_incr(first, n, new_n, dead, new_d, recovered, new_r):
-    print(C.GTABLE.format(
+def print_incr(first, n, new_n, dead, new_d, recovered, new_r, ALL=False):
+    f = C.A2TABLE if ALL else C.GTABLE
+    print(f.format(
         first,
         color.blue(n),
         color.dim(new_n, '+'),
@@ -382,6 +383,10 @@ class C:
 
     GTABLE = '{:<15}{:>16}{:>19}{:>20}{:>19}{:>20}{:>19}'
     GHEADER = '{:<11s}{:>11s}{:>11s}{:>11s}{:>11s}{:>11s}{:>11s}'.format(
+        "Date", "Confirmed", "C. New", "Deaths", "D. New", "Recovered", "R. New")
+
+    A2TABLE = '{:<32}{:>16}{:>19}{:>20}{:>19}{:>20}{:>19}'
+    A2HEADER = '{:<28s}{:>11s}{:>11s}{:>11s}{:>11s}{:>11s}{:>11s}'.format(
         "Date", "Confirmed", "C. New", "Deaths", "D. New", "Recovered", "R. New")
 
     @staticmethod
