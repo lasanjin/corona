@@ -85,7 +85,7 @@ def apppend_percentage(data, GLOBAL, COUNTRY):
 
 def calc_percentage(n, dead):
     try:
-        p = round(100*dead/n, 1)
+        p = round(100 * dead / n, 1)
         return 0 if p == 0.0 else p
 
     except ZeroDivisionError as e:
@@ -111,7 +111,7 @@ def get_data_thread(queue, data, ALL, GLOBAL, COUNTRY):
         end = len(table[0])
         start = end - 2 if not ALL else 4  # get only latest data (2 days)
 
-        prev = [0] * 3 if GLOBAL else SortedDict()  # new cases
+        prev = dict()  # new cases
         for col in range(start, end):  # for each date, iterate all countries
 
             dt = table[0][col]
@@ -128,7 +128,7 @@ def get_data_thread(queue, data, ALL, GLOBAL, COUNTRY):
                     n = 0
 
                 if GLOBAL:
-                    # {date: {total: [n, dead, recovered]}
+                    # {date: [n, dead, recovered]}
                     data[date][category] += n
 
                 else:
@@ -156,7 +156,7 @@ def append_data(data, category, country, date, n):
         data[country][date]['TOT'] = [0] * 3
         data[country][date]['%'] = [0]  # [] for sorting reasons
 
-    # {country: {date: [n, dead, recovered]}}
+    # {country: {date: {'TOT' [n, dead, recovered]}}}
     data[country][date]['TOT'][category] += n
 
 
@@ -165,6 +165,7 @@ def append_new_cases(prev, data, category, country, date, n):
         prev[country] = [0] * 3
 
     if 'NEW' not in data[country][date]:
+        # {country: {date: {'NEW' [n, dead, recovered]}}}
         data[country][date]['NEW'] = [0] * 3
 
     current = data[country][date]['TOT'][category]
