@@ -7,6 +7,14 @@ import numpy
 import datetime
 from sys import argv
 from scipy.optimize import curve_fit
+try:
+    import matplotlib.pyplot as plt
+except ImportError:
+    pass
+
+
+ndays = 7  # ndays forecast
+SHOW = False  # show graph
 
 
 def main():
@@ -24,35 +32,37 @@ def main():
             print(C.NO_COUNTRY)
             quit()
 
-        cc = 'US' if country.lower() == 'US' else country
-
-    ndays = 7  # ndays forecast
+        cc = 'US' if country == 'Us' else country
 
     if func == C.EXP:
-        a, k, b, dates = get_exp_func(data, cc)
+        a, k, b, dates, xy_data = get_exp_func(data, cc)
         B = 0  # b-value in exp function
         print_exp_func(a, k, B)
-        print_forecast(a, k, B, dates, ndays, C.EXP)
+
+        if SHOW:
+            show_graph([a, k, b], xy_data[0], xy_data[1])
+        else:
+            print_forecast(a, k, B, dates, ndays, C.EXP)
 
     elif func == C.LOG:
-        L, k, x0, dates = get_logistic_func(data, cc)
+        L, k, x0, dates, xy_data = get_logistic_func(data, cc)
         print_exp_func(L, k, x0)
-        print_forecast(L, k, x0, dates, ndays, C.LOG)
 
+        if SHOW:
+            last_day = calc_last_day(k, x0)
+            show_graph([L, k, x0], xy_data[0], xy_data[1], False, last_day)
+        else:
+            print_forecast(L, k, x0, dates, ndays, C.LOG)
 
-def get_params():
-    try:
-        f = argv[1:][0]
-    except IndexError:
+    else:
         print(C.USAGE)
-        quit()
 
-    try:
-        c = argv[1:][1].capitalize()
-        return f, c
 
-    except IndexError:
-        return f, None
+def calc_last_day(k, x0):
+    # Estimating last day with threshold very close to 1 (exactly 1 will take infinitely long time)
+    threshold = 1.0001
+    return int(round(
+        (-1 / k) * numpy.log((1 - threshold) / (threshold * numpy.exp(-k) - 1)) + x0))
 
 
 def exponential(x, a, k, b):
@@ -60,7 +70,7 @@ def exponential(x, a, k, b):
 
 
 def logistic(x, L, k, x0):
-    return L / (1 + numpy.exp(-k * (x - x0)))  # L / (1 + e^(-k * (x-x0)))
+    return L / (1 + numpy.exp(-k * (x - x0)))  # L/(1+e^(-k*(x-x0)))
 
 
 def get_exp_func(data, country=None):
@@ -78,7 +88,7 @@ def get_exp_func(data, country=None):
     r = 5
     a, k, b = popt
 
-    return round(a, r), round(k, r), round(b, r), dates
+    return round(a, r), round(k, r), round(b, r), dates, [xarr, yarr]
 
 
 def get_logistic_func(data, country=None):
@@ -95,7 +105,7 @@ def get_logistic_func(data, country=None):
     r = 5
     L, k, x0 = popt
 
-    return round(L, r), round(k, r), round(x0, r), dates
+    return round(L, r), round(k, r), round(x0, r), dates, [xarr, yarr]
 
 
 def build_func_data(data, country):
@@ -105,11 +115,11 @@ def build_func_data(data, country):
     x = 1
 
     for k, v in iterate(data, country):
-        y = int(v[0]) if country is None else int(v['TOT'][0])
+        dates.append(k)
 
+        y = int(v[0]) if country is None else int(v['TOT'][0])
         yarr.append(y)
         xarr.append(x)
-        dates.append(k)
 
         x += 1
 
@@ -120,13 +130,24 @@ def iterate(data, country):
     return data.items() if country is None else data[country].items()
 
 
+def show_graph(popt, xarr, yarr, EXP=True, LAST_DAY=None):
+    ld = len(xarr) if LAST_DAY is None else LAST_DAY
+    plot_x = numpy.linspace(0, ld)
+    plot_y = exponential(plot_x, *popt) if EXP else logistic(plot_x, *popt)
+
+    plt.plot(plot_x, plot_y, 'r-')
+    plt.scatter(xarr, yarr)
+
+    plt.show()
+
+
 def print_exp_func(a, k, b):
     print('{}e^({}x)+{}'.format(a, k, b))  # a*e^(x*k)+b
     print()
 
 
 def print_logistic_func(L, k, x0):
-    print('{}/e^(-{}*(x-{}))'.format(L, k, x0))  # L / (1 + e^(-k * (x-x0)))
+    print('{}/e^(-{}*(x-{}))'.format(L, k, x0))  # L/(1+e^(-k*(x-x0)))
     print()
 
 
@@ -155,6 +176,21 @@ def next_date(last, i):
     date = next_date.strftime("%y-%m-%d")
 
     return date
+
+
+def get_params():
+    try:
+        f = argv[1:][0]
+    except IndexError:
+        print(C.USAGE)
+        quit()
+
+    try:
+        c = argv[1:][1].capitalize()
+        return f, c
+
+    except IndexError:
+        return f, None
 
 
 class C:

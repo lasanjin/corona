@@ -44,7 +44,7 @@ $ ./corona.py <country>
 </br>
 
 
-**Forecast** based on exponential growth or logistic function (requires `numpy` and `scipy`)
+**Forecast** based on exponential growth or logistic function (requires `numpy`, `scipy` and `matplotlib`). Set `SHOW=True` if you want to show graph
 ```
 $ ./forecast.py -e | -l [COUNTRY]
 ```
