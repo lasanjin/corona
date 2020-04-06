@@ -1,5 +1,5 @@
 # Corona statistics
-Corona statistics. Runs currently only with Python 3+.
+Corona statistics. Runs with Python 3+.
 
 
 ## Demo
@@ -27,6 +27,10 @@ $ ./corona.py -g
    - `c`: Confirmed
    - `d`: Deaths
    - `r`: Recovered
+   - `cn`: New cases confirmed
+   - `dn`: New cases dead
+   - `rn`: New cases recovered
+   - `p`: Percentage of cases that are fatal
 ```
 $ ./corona.py -a $1
 ```
