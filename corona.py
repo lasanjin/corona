@@ -70,26 +70,17 @@ def get_data(ALL=True, GLOBAL=False, COUNTRY=None):
 
     queue.join()
 
-    apppend_percentage(GLOBAL, COUNTRY, data)  # possible when threads finish
+    apppend_percentage(data, GLOBAL, COUNTRY)  # possible when threads finish
 
     return data
 
 
-def apppend_percentage(GLOBAL, COUNTRY, data):
-    if GLOBAL:
-        for k, v in data.items():
-            data[k]['%'] = calc_percentage(v['TOT'][0], v['TOT'][1])
-
-    elif COUNTRY is None:
+def apppend_percentage(data, GLOBAL, COUNTRY):
+    if not GLOBAL and COUNTRY is None:
         for k, v in data.items():
             date = v.keys()[-1]
             v[date]['%'][0] = calc_percentage(
                 v[date]['TOT'][0], v[date]['TOT'][1])
-
-    else:
-        for data in data.values():
-            for k, v in data.items():
-                v['%'][0] = calc_percentage(v['TOT'][0], v['TOT'][1])
 
 
 def calc_percentage(n, dead):
@@ -126,12 +117,8 @@ def get_data_thread(queue, data, ALL, GLOBAL, COUNTRY):
             dt = table[0][col]
             date = parse_date(dt)  # csv files look different
 
-            if GLOBAL:
-                if date not in data:  # don't overwrite data
-                    data[date] = dict()
-                    data[date]['TOT'] = [0] * 3
-                    data[date]['NEW'] = [0] * 3
-                    data[date]['%'] = 0
+            if GLOBAL and date not in data:  # don't overwrite data
+                data[date] = [0] * 3
 
             for row in table[1:]:
 
@@ -142,7 +129,7 @@ def get_data_thread(queue, data, ALL, GLOBAL, COUNTRY):
 
                 if GLOBAL:
                     # {date: {total: [n, dead, recovered]}
-                    data[date]['TOT'][category] += n
+                    data[date][category] += n
 
                 else:
                     country = parse_country_name(row)
@@ -152,11 +139,8 @@ def get_data_thread(queue, data, ALL, GLOBAL, COUNTRY):
 
                     if match:
                         append_data(data, category, country, date, n)
-                        append_new_cases(GLOBAL, prev, data, category,
+                        append_new_cases(prev, data, category,
                                          country, date, n)
-
-            if GLOBAL:
-                append_new_cases(GLOBAL, prev, data, category, None, date, n)
 
         queue.task_done()
 
@@ -176,24 +160,18 @@ def append_data(data, category, country, date, n):
     data[country][date]['TOT'][category] += n
 
 
-def append_new_cases(GLOBAL, prev, data, category, country, date, n):
-    if GLOBAL:
-        current = data[date]['TOT'][category]
-        data[date]['NEW'][category] = current - prev[category]
-        prev[category] = current
+def append_new_cases(prev, data, category, country, date, n):
+    if country not in prev:
+        prev[country] = [0] * 3
 
-    else:
-        if country not in prev:
-            prev[country] = [0] * 3
+    if 'NEW' not in data[country][date]:
+        data[country][date]['NEW'] = [0] * 3
 
-        if 'NEW' not in data[country][date]:
-            data[country][date]['NEW'] = [0] * 3
+    current = data[country][date]['TOT'][category]
+    data[country][date]['NEW'][category] += \
+        current - prev[country][category]
 
-        current = data[country][date]['TOT'][category]
-        data[country][date]['NEW'][category] +=  \
-            current - prev[country][category]
-
-        prev[country][category] = current
+    prev[country][category] = current
 
 
 def parse_date(dt):
@@ -254,18 +232,14 @@ def find_keys(data):
 
 def sort(data, param, keys):
     s = C.sort_by(param)
-    cases = s[0]
-    category = s[1]
-    mrecent = keys[1]
-    before = keys[0]
 
     if s is not None:
         return sorted(
             data.items(),
             key=lambda c: (
-                c[1][mrecent][cases][category]
-                if mrecent in c[1]
-                else c[1][before][cases][category]))
+                c[1][keys[1]][s[0]][s[1]]
+                if keys[1] in c[1]
+                else c[1][keys[0]][s[0]][s[1]]))
     else:
         return data.items()
 
@@ -273,23 +247,23 @@ def sort(data, param, keys):
 def print_global(data):
     print_header(C.GHEADER)
 
+    prev = [0] * 3
     for k, v in data.items():
 
-        total = v['TOT']
-        new = v['NEW']
-
         date = k
-        n = total[0]
-        dead = total[1]
-        recovered = total[2]
+        n = v[0]
+        dead = v[1]
+        recovered = v[2]
 
-        new_n = new[0]
-        new_d = new[1]
-        new_r = new[2]
+        new_n = n - prev[0]
+        new_d = dead - prev[1]
+        new_r = recovered - prev[2]
 
-        p = v['%']
+        print_elements(date, n, new_n, dead, new_d, recovered, new_r)
 
-        print_elements(date, n, new_n, dead, new_d, recovered, new_r, p)
+        prev[0] = n
+        prev[1] = dead
+        prev[2] = recovered
 
 
 def print_country(data):
@@ -310,14 +284,13 @@ def print_country(data):
                 new_d = v['NEW'][1]
                 new_r = v['NEW'][2]
 
-                p = v['%'][0]
-
                 print_elements(first, n, new_n, dead, new_d,
-                               recovered, new_r, p, True)
+                               recovered, new_r, None, True)
 
 
-def print_elements(first, n, new_n, dead, new_d, recovered, new_r, p, ALL=False):
+def print_elements(first, n, new_n, dead, new_d, recovered, new_r, p=None, ALL=False):
     f = C.ATABLE if ALL else C.GTABLE
+    p = calc_percentage(n, dead) if p is None else p
 
     print(f.format(
         first,
