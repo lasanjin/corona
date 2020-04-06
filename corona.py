@@ -272,11 +272,12 @@ def print_country(data):
         print(C.INVALID)
     else:
         print_header(C.GHEADER)
-        prev = [0] * 3
-        for data in data.values():
-            for k, v in data.items():
 
-                first = k
+        prev = [0] * 3
+        for country in data.values():
+            for k, v in country.items():
+
+                date = k
                 n = v['TOT'][0]
                 dead = v['TOT'][1]
                 recovered = v['TOT'][2]
@@ -285,8 +286,8 @@ def print_country(data):
                 new_d = v['NEW'][1]
                 new_r = v['NEW'][2]
 
-                print_elements(first, n, new_n, dead, new_d,
-                               recovered, new_r, None, True)
+                print_elements(date, n, new_n, dead, new_d,
+                               recovered, new_r, None)
 
 
 def print_elements(first, n, new_n, dead, new_d, recovered, new_r, p=None, ALL=False):

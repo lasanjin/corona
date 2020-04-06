@@ -1,6 +1,7 @@
 #!/usr/bin/python
 # -*- coding: utf-8 -*-
 
+import json
 import corona
 import numpy
 import datetime
@@ -16,19 +17,20 @@ def main():
 
     else:
         c = corona.C.regex(country)
-        data = corona.get_data(True, True, c)
+        data = corona.get_data(True, False, c)
 
+    c = 'US' if country is not None and country == 'US' else country
     a, k, b, dates = get_function(data, country)
     ndays = 7  # ndays forecast
-    _b = 0  # b-value in exp function
+    B = 0  # b-value in exp function
 
-    print_function(a, k, dates, _b)
-    print_forecast(a, k, dates, ndays, _b)
+    print_function(a, k, dates, B)
+    print_forecast(a, k, dates, ndays, B)
 
 
 def get_params():
     try:
-        return argv[1:][0].capitalize()
+        return argv[1:][0].upper()
 
     except IndexError:
         return None
@@ -44,10 +46,10 @@ def get_function(data, country):
     dates = []
     x = 1
 
-    for k, v in data.items():
-        y = int(v[0])
+    for k, v in iter_data(data, country):
+        y = int(v[0]) if country is None else int(v['TOT'][0])
 
- #       if y > 0:
+        # if y > 0:
         yarr.append(y)
         xarr.append(x)
         dates.append(k)
@@ -59,10 +61,14 @@ def get_function(data, country):
     # Always explicitly supply own initial guesses
     popt, pcov = curve_fit(exponential, xarr, yarr, p0=(0, 0.1, 0))
     r = 5
-#    print(popt, pcov)
-#    quit()
+    # print(popt, pcov)
+    # quit()
 
     return round(popt[0], r), round(popt[1], r), round(popt[2], r), dates
+
+
+def iter_data(data, country):
+    return data.items() if country is None else data[country].items()
 
 
 def print_function(a, k, dates, b=0):
