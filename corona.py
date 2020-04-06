@@ -3,6 +3,7 @@
 
 import re
 import csv
+import json
 import http.client
 import urllib.error
 from sys import argv
@@ -56,6 +57,10 @@ def list_countries():
 def list_all(sort_by):
     data = get_data(False)
 
+    # jd = json.dumps(data, indent=2, ensure_ascii=False)  # Testing purposes
+    # print(jd)
+    # quit()
+
     print_all(data, sort_by)
 
 
@@ -68,6 +73,10 @@ def list_global():
 def list_country(country):
     c = C.regex(country)
     data = get_data(True, False, c)
+
+    # jd = json.dumps(data, indent=2, ensure_ascii=False)  # Testing purposes
+    # print(jd)
+    # quit()
 
     print_country(data)
 
@@ -225,7 +234,6 @@ def print_countries(countries):
 def print_all(data, param):
     print_header(C.A2HEADER)
 
-    prev = [0] * 3
     keys = find_keys(data)
     for k, v in sort(data, param, keys):
 
