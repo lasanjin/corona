@@ -70,20 +70,26 @@ def get_data(ALL=True, GLOBAL=False, COUNTRY=None):
 
     queue.join()
 
-    apppend_percentage(GLOBAL, data)  # possible when threads finish
+    apppend_percentage(GLOBAL, COUNTRY, data)  # possible when threads finish
 
     return data
 
 
-def apppend_percentage(GLOBAL, data):
+def apppend_percentage(GLOBAL, COUNTRY, data):
     if GLOBAL:
         for k, v in data.items():
             data[k]['%'] = calc_percentage(v['TOT'][0], v['TOT'][1])
-    else:
+
+    elif COUNTRY is None:
         for k, v in data.items():
             date = v.keys()[-1]
             v[date]['%'][0] = calc_percentage(
                 v[date]['TOT'][0], v[date]['TOT'][1])
+
+    else:
+        for data in data.values():
+            for k, v in data.items():
+                v['%'][0] = calc_percentage(v['TOT'][0], v['TOT'][1])
 
 
 def calc_percentage(n, dead):
