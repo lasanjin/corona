@@ -79,8 +79,8 @@ def apppend_percentage(data, GLOBAL, COUNTRY):
     if not GLOBAL and COUNTRY is None:
         for k, v in data.items():
             date = v.keys()[-1]
-            v[date]['%'][0] = calc_percentage(
-                v[date]['TOT'][0], v[date]['TOT'][1])
+            v[date]['%'][0] = \
+                calc_percentage(v[date]['TOT'][0], v[date]['TOT'][1])
 
 
 def calc_percentage(n, dead):
@@ -379,7 +379,7 @@ class C:
     GLOBAL = '-g'
     COUNTRY = r'.'
     INVALID = 'INVALID COUNTRY'
-    USAGE = 'Usage: ./corona.py [-l | -g | -a [c|d|r|cn|dn|rn|p] | COUNTRY]\n' \
+    USAGE = 'Usage: ./corona.py -l | -g | -a [c|d|r|cn|dn|rn|p] | COUNTRY\n' \
         '\n-l: List countries' \
         '\n-g: List global data' \
         '\n-a: List all countries data' \
