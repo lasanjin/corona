@@ -44,13 +44,17 @@ $ ./corona.py <country>
 </br>
 
 
-**Forecast** based on exponential growth (requires `numpy` and `scipy`)
+**Forecast** based on exponential growth or logistic function (requires `numpy` and `scipy`)
+```
+$ ./forecast.py -e | -l [COUNTRY]
+```
+
  - Global forecast
 ```
-$ ./forecast
+$ ./forecast -l | -e
 ```
 
  - Country forecast
 ```
-$ ./forecast <country>
+$ ./forecast -l | -e <country>
 ```
