@@ -66,7 +66,7 @@ def main():
 
         # Set size
         plt.rcParams['figure.figsize'] = [16, 9]
-        plt.rc('font', size=8)
+        plt.rc('font', size=10)
 
         # Format x-axis & y-axis
         fig, ax = plt.subplots()
@@ -107,8 +107,6 @@ def main():
 
         plt.grid()
         plt.legend()
-        plt.xlabel("Number of days")
-        plt.ylabel("Number of confirmed cases")
         plt.show()
 
     except Exception as e:
