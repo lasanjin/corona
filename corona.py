@@ -201,7 +201,7 @@ def print_countries(countries):
 
 
 def print_all(data, param):
-    print_header(C.AHEADER)
+    print_header(C.HEADER)
 
     keys = find_keys(data)  # csv files are not always synced (dates)
     for k, v in sort(data, param, keys):
@@ -291,18 +291,18 @@ def print_country(data):
 
 
 def print_elements(first, n, new_n, dead, new_d, recovered, new_r, p=None, ALL=False):
-    f = C.ATABLE if ALL else C.GTABLE
+    f = C.TABLE if ALL else C.GTABLE
     p = calc_percentage(n, dead) if p is None else p
 
     print(f.format(
         first,
-        color.blue('{:,.0f}'.format(n)),
-        color.dim('{:,.0f}'.format(new_n), '+'),
-        color.red('{:,.0f}'.format(dead)),
+        color.blue(C.comma_sep(n)),
+        color.dim(C.comma_sep(new_n), '+'),
+        color.red(C.comma_sep(dead)),
         color.dim(p, None, '%'),
-        color.dim('{:,.0f}'.format(new_d), '+'),
-        color.green('{:,.0f}'.format(recovered)),
-        color.dim('{:,.0f}'.format(new_r), '+')))
+        color.dim(C.comma_sep(new_d), '+'),
+        color.green(C.comma_sep(recovered)),
+        color.dim(C.comma_sep(new_r), '+')))
 
 
 def print_header(header):
@@ -393,11 +393,11 @@ class C:
             '\n\t\t./corona.py -a cn' \
             '\n\t\t./corona.py sweden'
     CTABLE = '{:<40s}{:<40s}'
+    TABLE = '{:<32}{:>16}{:>19}{:>20}{:>15}{:>19}{:>20}{:>19}'
+    HEADER = '{:<28s}{:>11s}{:>11s}{:>11s}{:>7}{:>11s}{:>11s}{:>11s}'.format(
+        "Date", "Confirmed", "C. New", "Deaths", "%", "D. New", "Recovered", "R. New")
     GTABLE = '{:<15}{:>19}{:>19}{:>20}{:>15}{:>19}{:>20}{:>19}'
     GHEADER = '{:<11s}{:>14s}{:>11s}{:>11s}{:>7}{:>11s}{:>11s}{:>11s}'.format(
-        "Date", "Confirmed", "C. New", "Deaths", "%", "D. New", "Recovered", "R. New")
-    ATABLE = '{:<32}{:>16}{:>19}{:>20}{:>15}{:>19}{:>20}{:>19}'
-    AHEADER = '{:<28s}{:>11s}{:>11s}{:>11s}{:>7}{:>11s}{:>11s}{:>11s}'.format(
         "Date", "Confirmed", "C. New", "Deaths", "%", "D. New", "Recovered", "R. New")
 
     @staticmethod
@@ -436,6 +436,10 @@ class C:
     @staticmethod
     def line(head):
         return '-' * len(head.expandtabs())
+
+    @staticmethod
+    def comma_sep(s):
+        return '{:,.0f}'.format(s)
 
 
 class color:

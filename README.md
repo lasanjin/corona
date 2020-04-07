@@ -10,7 +10,7 @@ Corona statistics. Runs with Python 3+.
 Data from [Johns Hopkins CSSE](https://github.com/CSSEGISandData/COVID-19)
 
 ```
-$ ./corona.py [-l | -g | -a [c|d|r] | COUNTRY]
+$ ./corona.py -l | -g | -a [c|d|r|cn|dn|rn|p] | COUNTRY
 ```
 
  - List countries
@@ -42,7 +42,7 @@ $ ./corona.py <country>
 
 
 ### Forecast 
- - Plots graph and output data based on exponential and logistic functions
+ - Plots graph and outputs data based on exponential and logistic functions
    - **Requires** `numpy`, `scipy` and `matplotlib`
 ```
 $ ./forecast.py [COUNTRY]
