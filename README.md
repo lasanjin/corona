@@ -40,21 +40,15 @@ $ ./corona.py -a $1
 $ ./corona.py <country>
 ```
 
+</br>
+
+### Forecast 
+ - Plots graph and output data based on exponential and logistic functions
+   - **Requires** `numpy`, `scipy` and `matplotlib`
+```
+$ ./forecast.py [COUNTRY]
+```
 
 </br>
 
-
-**Forecast** based on exponential growth or logistic function (requires `numpy`, `scipy` and `matplotlib`). Set `SHOW=True` if you want to show graph
-```
-$ ./forecast.py -e | -l [COUNTRY]
-```
-
- - Global forecast
-```
-$ ./forecast -l | -e
-```
-
- - Country forecast
-```
-$ ./forecast -l | -e <country>
-```
+<img src="figure.png" width="800">
