@@ -296,13 +296,13 @@ def print_elements(first, n, new_n, dead, new_d, recovered, new_r, p=None, ALL=F
 
     print(f.format(
         first,
-        color.blue(n),
-        color.dim(new_n, '+'),
-        color.red(str(dead)),
-        color.dim(str(p), None, '%'),
-        color.dim(new_d, '+'),
-        color.green(recovered),
-        color.dim(new_r, '+')))
+        color.blue('{:,.0f}'.format(n)),
+        color.dim('{:,.0f}'.format(new_n), '+'),
+        color.red('{:,.0f}'.format(dead)),
+        color.dim(p, None, '%'),
+        color.dim('{:,.0f}'.format(new_d), '+'),
+        color.green('{:,.0f}'.format(recovered)),
+        color.dim('{:,.0f}'.format(new_r), '+')))
 
 
 def print_header(header):
@@ -393,8 +393,8 @@ class C:
             '\n\t\t./corona.py -a cn' \
             '\n\t\t./corona.py sweden'
     CTABLE = '{:<40s}{:<40s}'
-    GTABLE = '{:<15}{:>16}{:>19}{:>20}{:>15}{:>19}{:>20}{:>19}'
-    GHEADER = '{:<11s}{:>11s}{:>11s}{:>11s}{:>7}{:>11s}{:>11s}{:>11s}'.format(
+    GTABLE = '{:<15}{:>19}{:>19}{:>20}{:>15}{:>19}{:>20}{:>19}'
+    GHEADER = '{:<11s}{:>14s}{:>11s}{:>11s}{:>7}{:>11s}{:>11s}{:>11s}'.format(
         "Date", "Confirmed", "C. New", "Deaths", "%", "D. New", "Recovered", "R. New")
     ATABLE = '{:<32}{:>16}{:>19}{:>20}{:>15}{:>19}{:>20}{:>19}'
     AHEADER = '{:<28s}{:>11s}{:>11s}{:>11s}{:>7}{:>11s}{:>11s}{:>11s}'.format(

@@ -3,12 +3,12 @@
 
 import corona
 import numpy
-from datetime import datetime, timedelta
 from sys import argv
 from scipy.optimize import curve_fit
+from datetime import datetime, timedelta
 try:
-    import matplotlib.pyplot as plt
     import matplotlib as mpl
+    import matplotlib.pyplot as plt
     import matplotlib.dates as mdate
 except ImportError:
     pass
@@ -51,7 +51,7 @@ def main():
     date = start + timedelta(days=days)
     conf = logistic(days, L, k_log, x0)
     print('\n{}\t{}'.format(C.LASTD, date))
-    print('{}\t\t{}\n'.format(C.EST, int(conf)))
+    print('{}\t\t{:,.0f}\n'.format(C.EST, int(conf)))
 
     # Plot graph
     try:
@@ -208,7 +208,7 @@ def print_forecast(L, k_log, x0, a, k_exp, b, dates, data, ndays):
 
     for i, x in enumerate(range(start, end)):
         date = next_date(last, i)
-        print_value(date, 'NaN', x, L, k_log, x0, a, k_exp, b)
+        print_value(date, 0, x, L, k_log, x0, a, k_exp, b)
 
 
 def print_value(date, real, x, L, k_log, x0, a, k_exp, b):
@@ -255,7 +255,7 @@ class C:
     LASTD = "LAST DAY BASED ON LOGISTIC FUNCTION:"
     EST = 'ESTIMATED INFECTED ON LAST DAY:'
 
-    TABLE = '{:10}{:>12}{:>12}{:>12}'
+    TABLE = '{:10}{:>12,.0f}{:>12,.0f}{:>12,.0f}'
     HEADER = '{:10}{:>12}{:>12}{:>12}'.format('Date', 'Real', 'Exp', 'Log')
 
     @staticmethod
