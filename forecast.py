@@ -13,10 +13,8 @@ try:
 except ImportError:
     pass
 
-from scipy.special import expit, logit
 
 ndays = 7  # ndays forecast
-SHOW = True  # show graph
 
 
 def main():
