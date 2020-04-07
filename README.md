@@ -40,7 +40,6 @@ $ ./corona.py -a $1
 $ ./corona.py <country>
 ```
 
-</br>
 
 ### Forecast 
  - Plots graph and output data based on exponential and logistic functions
