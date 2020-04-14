@@ -37,7 +37,7 @@ def main():
         print_global(data)
 
     else:
-        c = C.regex(' '.join([cmd, s]))
+        c = C.regex(' '.join(filter(None, [cmd, s])))
         data = get_data(True, False, c)
         print_country(data)
 
