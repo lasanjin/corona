@@ -8,10 +8,13 @@ import http.client
 import urllib.error
 from sys import argv
 import urllib.request
-from threading import Thread
+from threading import Thread, Lock
 from queue import PriorityQueue
 from datetime import datetime, timedelta, date
 from modules.sortedcontainers import SortedSet, SortedDict
+
+
+lock = Lock()
 
 
 def main():
@@ -19,6 +22,7 @@ def main():
 
     if cmd == C.EMPTY:
         print(C.USAGE)
+        quit()
 
     elif cmd == C.COUNTRIES:
         cs = get_countries()
@@ -33,7 +37,7 @@ def main():
         print_global(data)
 
     else:
-        c = C.regex(cmd)
+        c = C.regex(' '.join([cmd, s]))
         data = get_data(True, False, c)
         print_country(data)
 
@@ -128,8 +132,12 @@ def get_data_thread(queue, data, ALL, GLOBAL, COUNTRY):
                     n = 0
 
                 if GLOBAL:
-                    # {date: [n, dead, recovered]}
-                    data[date][category] += n
+                    lock.acquire()
+                    try:
+                        # {date: [n, dead, recovered]}
+                        data[date][category] += n
+                    finally:
+                        lock.release()
 
                 else:
                     country = parse_country_name(row)
@@ -156,8 +164,12 @@ def append_data(data, category, country, date, n):
         data[country][date]['TOT'] = [0] * 3
         data[country][date]['%'] = [0]  # [] for sorting reasons
 
-    # {country: {date: {'TOT' [n, dead, recovered]}}}
-    data[country][date]['TOT'][category] += n
+    lock.acquire()
+    try:
+        # {country: {date: {'TOT': [n, dead, recovered]}}}
+        data[country][date]['TOT'][category] += n
+    finally:
+        lock.release()
 
 
 def append_new_cases(prev, data, category, country, date, n):
@@ -165,14 +177,18 @@ def append_new_cases(prev, data, category, country, date, n):
         prev[country] = [0] * 3
 
     if 'NEW' not in data[country][date]:
-        # {country: {date: {'NEW' [n, dead, recovered]}}}
+        # {country: {date: {'NEW': [n, dead, recovered]}}}
         data[country][date]['NEW'] = [0] * 3
 
-    current = data[country][date]['TOT'][category]
-    data[country][date]['NEW'][category] += \
-        current - prev[country][category]
+    lock.acquire()
+    try:
+        current = data[country][date]['TOT'][category]
+        data[country][date]['NEW'][category] += \
+            current - prev[country][category]
 
-    prev[country][category] = current
+        prev[country][category] = current
+    finally:
+        lock.release()
 
 
 def parse_date(dt):
@@ -317,7 +333,7 @@ def get_params():
         cmd = argv[1:][0]
 
         try:
-            s = argv[1:][1]
+            s = ' '.join(argv[1:][1:])
         except IndexError:
             return cmd, C.EMPTY
 
@@ -362,7 +378,7 @@ class api:
 
     @staticmethod
     def append_url(path):
-        return api.URL + api.TS + path
+        return '{}{}{}'.format(api.URL, api.TS, path)
 
     @staticmethod
     def urls():
@@ -377,7 +393,6 @@ class C:
     COUNTRIES = '-l'
     ALL = '-a'
     GLOBAL = '-g'
-    COUNTRY = r'.'
     INVALID = 'INVALID COUNTRY'
     USAGE = 'Usage: ./corona.py -l | -g | -a [c|d|r|cn|dn|rn|p] | COUNTRY\n' \
         '\n-l: List countries' \

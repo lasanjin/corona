@@ -20,7 +20,7 @@ ndays = 7  # ndays forecast
 def main():
     country = get_params()
 
-    if country is None:
+    if not country:
         data = corona.get_data(True, True)
         COUNTRY = None
 
@@ -161,7 +161,7 @@ def fit_curve(func, xarr, yarr, p01):
     return popt
 
 
-def build_func_data(data, country):
+def build_func_data(data, country=None):
     xarr, yarr = [], []
 
     for x, (k, v) in enumerate(iterate(data, country)):
@@ -180,9 +180,9 @@ def iterate(data, country):
 
 def print_functions(a, k, b, L, k_l, x0):
     # a*e^(x*k)+b
-    print('\nEXPONENTIAL: {}e^({}x)+{}'.format(a, k, b))
+    print('\nEXPONENTIAL:\t{}e^({}x)+{}'.format(a, k, b))
     # L/(1+e^(-k*(x-x0)))
-    print('\nLOGISTIC: {}/e^(-{}*(x-{}))'.format(L, k, x0))
+    print('\nLOGISTIC:\t{}/e^(-{}*(x-{}))'.format(L, k, x0))
 
 
 def print_last_day(L, k_l, x0, start):
@@ -234,10 +234,10 @@ def print_header():
 
 def get_params():
     try:
-        return argv[1:][0].capitalize()
+        return ' '.join(argv[1:]).title()
 
     except IndexError:
-        return None
+        return ''
 
 
 class C:
