@@ -355,16 +355,16 @@ def request(url):
         return urllib.request.urlopen(url).read().decode('utf-8')
 
     except urllib.error.HTTPError as e:
-        print("HTTPError: {}".format(e.code))
+        print("HTTPError:", e.code)
 
     except urllib.error.URLError as e:
-        print("URLError: {}".format(e.reason))
+        print("URLError:", e.reason)
 
     except http.client.HTTPException as e:
-        print("HTTPException: {}".format(e))
+        print("HTTPException:", e)
 
     except Exception as e:
-        print("Exception: {}".format(e))
+        print("Exception:", e)
 
 
 class api:
@@ -408,8 +408,8 @@ class C:
             '\n\t\t./corona.py -a cn' \
             '\n\t\t./corona.py sweden'
     CTABLE = '{:<40s}{:<40s}'
-    TABLE = '{:<32}{:>16}{:>19}{:>20}{:>15}{:>19}{:>20}{:>19}'
-    HEADER = '{:<28s}{:>11s}{:>11s}{:>11s}{:>7}{:>11s}{:>11s}{:>11s}'.format(
+    TABLE = '{:<32}{:>18}{:>19}{:>20}{:>15}{:>19}{:>20}{:>19}'
+    HEADER = '{:<28s}{:>13s}{:>11s}{:>11s}{:>7}{:>11s}{:>11s}{:>11s}'.format(
         "Date", "Confirmed", "C. New", "Deaths", "%", "D. New", "Recovered", "R. New")
     GTABLE = '{:<15}{:>19}{:>19}{:>20}{:>15}{:>19}{:>20}{:>19}'
     GHEADER = '{:<11s}{:>14s}{:>11s}{:>11s}{:>7}{:>11s}{:>11s}{:>11s}'.format(

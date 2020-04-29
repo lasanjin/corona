@@ -29,7 +29,7 @@ def main():
         data = corona.get_data(True, False, c)
 
         if not data:
-            print(C.NO_COUNTRY)
+            print('INVALID COUNTRY')
             quit()
 
         COUNTRY = 'US' if country == 'Us' else country
