@@ -4,44 +4,43 @@
 import re
 import csv
 import json
+import utils as u
 import http.client
 import urllib.error
 from sys import argv
 import urllib.request
-from threading import Thread, Lock
+from threading import Thread
 from queue import PriorityQueue
 from datetime import datetime, timedelta, date
 from modules.sortedcontainers import SortedSet, SortedDict
 
 
-lock = Lock()
-
-
 def main():
-    cmd, s = get_params()
+    cmd, sort = get_params()
 
     if cmd == C.EMPTY:
         print(C.USAGE)
         quit()
 
-    elif cmd == C.COUNTRIES:
+    elif cmd == C.LIST:
         cs = get_countries()
-        print_countries(cs)
+        list_countries(cs)
 
-    elif cmd == C.ALL:
+    elif cmd == C.COUNTRIES:
         data = get_data(False)
-        print_all(data, s)
+        print_countries(data, sort)
 
     elif cmd == C.GLOBAL:
         data = get_data(True, True)
         print_global(data)
 
     else:
-        c = C.regex(' '.join(filter(None, [cmd, s])))
-        data = get_data(True, False, c)
+        format_input = ' '.join(filter(None, [cmd, sort]))
+        country = r'\b' + re.escape(str(format_input).lower()) + r'\b'
+        data = get_data(True, False, country)
         print_country(data)
 
-    # jd = json.dumps(data, indent=2, ensure_ascii=False)  # Testing purposes
+    # jd = json.dumps(data, indent=2, ensure_ascii=False)  # debug
 
 
 def get_countries():
@@ -62,18 +61,17 @@ def parse_country_name(row):
     return h
 
 
-def get_data(ALL=True, GLOBAL=False, COUNTRY=None):
+def get_data(LIST=True, GLOBAL=False, COUNTRY=None):
     data = SortedDict()
     queue = build_queue()  # thread for each csv document
 
     for i in range(queue.qsize()):
         thread = Thread(target=get_data_thread,
-                        args=(queue, data, ALL, GLOBAL, COUNTRY))
+                        args=(queue, data, LIST, GLOBAL, COUNTRY))
         thread.daemon = True
         thread.start()
 
     queue.join()
-
     apppend_percentage(data, GLOBAL, COUNTRY)  # possible when threads finish
 
     return data
@@ -105,19 +103,17 @@ def build_queue():
     return queue
 
 
-def get_data_thread(queue, data, ALL, GLOBAL, COUNTRY):
+def get_data_thread(queue, data, LIST, GLOBAL, COUNTRY):
     while not queue.empty():
         q = queue.get()
         category = q[0]
         url = q[1]
-
         table = get_table(url)
         end = len(table[0])
-        start = end - 2 if not ALL else 4  # get only latest data (2 days)
-
+        start = end - 2 if not LIST else 4  # get only latest data (2 days)
         prev = dict()  # new cases
-        for col in range(start, end):  # for each date, iterate all countries
 
+        for col in range(start, end):  # for each date, iterate all countries
             dt = table[0][col]
             date = parse_date(dt)  # csv files look different
 
@@ -125,25 +121,20 @@ def get_data_thread(queue, data, ALL, GLOBAL, COUNTRY):
                 data[date] = [0] * 3
 
             for row in table[1:]:
-
                 try:
                     n = int(row[col])
                 except ValueError:
                     n = 0
 
                 if GLOBAL:
-                    lock.acquire()
-                    try:
-                        # {date: [n, dead, recovered]}
-                        data[date][category] += n
-                    finally:
-                        lock.release()
-
+                    # {date: [n, dead, recovered]}
+                    data[date][category] += n
                 else:
                     country = parse_country_name(row)
-                    match = True \
-                        if COUNTRY is None \
-                        else re.search(COUNTRY, country.lower())
+                    if COUNTRY is None:
+                        match = True
+                    else:
+                        match = re.search(COUNTRY, country.lower())
 
                     if match:
                         append_data(data, category, country, date, n)
@@ -164,12 +155,8 @@ def append_data(data, category, country, date, n):
         data[country][date]['TOT'] = [0] * 3
         data[country][date]['%'] = [0]  # [] for sorting reasons
 
-    lock.acquire()
-    try:
-        # {country: {date: {'TOT': [n, dead, recovered]}}}
-        data[country][date]['TOT'][category] += n
-    finally:
-        lock.release()
+    # {country: {date: {'TOT': [n, dead, recovered]}}}
+    data[country][date]['TOT'][category] += n
 
 
 def append_new_cases(prev, data, category, country, date, n):
@@ -180,19 +167,14 @@ def append_new_cases(prev, data, category, country, date, n):
         # {country: {date: {'NEW': [n, dead, recovered]}}}
         data[country][date]['NEW'] = [0] * 3
 
-    lock.acquire()
-    try:
-        current = data[country][date]['TOT'][category]
-        data[country][date]['NEW'][category] += \
-            current - prev[country][category]
-
-        prev[country][category] = current
-    finally:
-        lock.release()
+    current = data[country][date]['TOT'][category]
+    data[country][date]['NEW'][category] += current - prev[country][category]
+    prev[country][category] = current
 
 
 def parse_date(dt):
     f = C.format('mdy')
+
     try:
         return format_date(dt, f[0])
     except ValueError:
@@ -207,21 +189,21 @@ def format_date(date, format):
     return time
 
 
-def print_countries(countries):
+def list_countries(countries):
     prev = ''
+
     for i, c in enumerate(countries):
         if i % 2 == 0:
             prev = c
         else:
-            print(C.CTABLE.format(c, prev))
+            print(C.LIST_TABLE.format(c, prev))
 
 
-def print_all(data, param):
-    print_header(C.HEADER)
-
+def print_countries(data, param):
+    print_header(C.COUNTRY_HEADER)
     keys = find_keys(data)  # csv files are not always synced (dates)
-    for k, v in sort(data, param, keys):
 
+    for k, v in sort(data, param, keys):
         date = v.keys()[-1]  # csv files are not always synced (dates)
         first = k
 
@@ -241,6 +223,7 @@ def print_all(data, param):
 def find_keys(data):
     keys = []
     v = data.values()[-1]
+
     for i in range(-2, 0):
         keys.append(v.keys()[i])
 
@@ -262,11 +245,10 @@ def sort(data, param, keys):
 
 
 def print_global(data):
-    print_header(C.GHEADER)
-
+    print_header(C.GLOBAL_HEADER)
     prev = [0] * 3
-    for k, v in data.items():
 
+    for k, v in data.items():
         date = k
         n = v[0]
         dead = v[1]
@@ -285,14 +267,13 @@ def print_global(data):
 
 def print_country(data):
     if not data:
-        print(C.INVALID)
+        print(u.error(), 'INVALID COUNTRY')
     else:
-        print_header(C.GHEADER)
-
+        print_header(C.GLOBAL_HEADER)
         prev = [0] * 3
+
         for country in data.values():
             for k, v in country.items():
-
                 date = k
                 n = v['TOT'][0]
                 dead = v['TOT'][1]
@@ -307,25 +288,28 @@ def print_country(data):
 
 
 def print_elements(first, n, new_n, dead, new_d, recovered, new_r, p=None, ALL=False):
-    f = C.TABLE if ALL else C.GTABLE
+    f = C.COUNTRY_TABLE if ALL else C.GLOBAL_TABLE
     p = calc_percentage(n, dead) if p is None else p
-
     print(f.format(
         first,
-        color.blue(C.comma_sep(n)),
-        color.dim(C.comma_sep(new_n), '+'),
-        color.red(C.comma_sep(dead)),
-        color.dim(p, None, '%'),
-        color.dim(C.comma_sep(new_d), '+'),
-        color.green(C.comma_sep(recovered)),
-        color.dim(C.comma_sep(new_r), '+')))
+        u.color.blue(cs(n)),
+        u.color.dim(cs(new_n), '+'),  # +10
+        u.color.red(cs(dead)),
+        u.color.dim(p, None, '%'),  # 10%
+        u.color.dim(cs(new_d), '+'),
+        u.color.green(cs(recovered)),
+        u.color.dim(cs(new_r), '+')))
+
+
+def cs(s):
+    return '{:,.0f}'.format(s)  # 1000000 -> 1,000,000
 
 
 def print_header(header):
-    l, h = C.header(header)
-    print(color.dim(l))
-    print(color.dim(h))
-    print(color.dim(l))
+    line = '-' * len(header.expandtabs())
+    print(u.color.dim(line))
+    print(u.color.dim(header))
+    print(u.color.dim(line))
 
 
 def get_params():
@@ -370,7 +354,6 @@ def request(url):
 class api:
     URL = 'https://raw.githubusercontent.com/CSSEGISandData' \
         '/COVID-19/master/csse_covid_19_data'
-
     TS = '/csse_covid_19_time_series/'
     TC = 'time_series_covid19_confirmed_global.csv'
     TD = 'time_series_covid19_deaths_global.csv'
@@ -390,34 +373,30 @@ class api:
 
 class C:
     EMPTY = ''
-    COUNTRIES = '-l'
-    ALL = '-a'
+    LIST = '-l'
     GLOBAL = '-g'
-    INVALID = 'INVALID COUNTRY'
-    USAGE = 'Usage: ./corona.py -l | -g | -a [c|d|r|cn|dn|rn|p] | COUNTRY\n' \
+    COUNTRIES = '-c'
+    USAGE = 'Usage: ./corona.py -l | -g | -c [c|d|r|nc|nd|nr|p] | COUNTRY\n' \
         '\n-l: List countries' \
         '\n-g: List global data' \
-        '\n-a: List all countries data' \
+        '\n-c: List all countries data' \
             '\n\t\tc:  Cases' \
             '\n\t\td:  Dead:' \
             '\n\t\tr:  Recovered' \
-            '\n\t\t*n: New cases' \
+            '\n\t\tn*: New cases|dead|recovered' \
             '\n\t\tp:  Percentage' \
         '\n\nExamples:' \
+            '\n\t\t./corona.py -l' \
             '\n\t\t./corona.py -g' \
-            '\n\t\t./corona.py -a cn' \
+            '\n\t\t./corona.py -c nc' \
             '\n\t\t./corona.py sweden'
-    CTABLE = '{:<40s}{:<40s}'
-    TABLE = '{:<32}{:>18}{:>19}{:>20}{:>15}{:>19}{:>20}{:>19}'
-    HEADER = '{:<28s}{:>13s}{:>11s}{:>11s}{:>7}{:>11s}{:>11s}{:>11s}'.format(
-        "Date", "Confirmed", "C. New", "Deaths", "%", "D. New", "Recovered", "R. New")
-    GTABLE = '{:<15}{:>19}{:>19}{:>20}{:>15}{:>19}{:>20}{:>19}'
-    GHEADER = '{:<11s}{:>14s}{:>11s}{:>11s}{:>7}{:>11s}{:>11s}{:>11s}'.format(
-        "Date", "Confirmed", "C. New", "Deaths", "%", "D. New", "Recovered", "R. New")
-
-    @staticmethod
-    def regex(c):
-        return r'\b' + re.escape(str(c).lower()) + r'\b'
+    LIST_TABLE = '{:<40s}{:<40s}'
+    COUNTRY_TABLE = '{:<32}{:>18}{:>19}{:>20}{:>15}{:>19}{:>20}{:>19}'
+    COUNTRY_HEADER = '{:<28s}{:>13s}{:>11s}{:>11s}{:>7}{:>11s}{:>11s}{:>11s}'.format(
+        "Date", "Confirmed", "New C.", "Deaths", "%", "New D.", "Recovered", "New R.")
+    GLOBAL_TABLE = '{:<15}{:>19}{:>19}{:>20}{:>15}{:>19}{:>20}{:>19}'
+    GLOBAL_HEADER = '{:<11s}{:>14s}{:>11s}{:>11s}{:>7}{:>11s}{:>11s}{:>11s}'.format(
+        "Date", "Confirmed", "New C.", "Deaths", "%", "New D.", "Recovered", "New R.")
 
     @staticmethod
     def format(arg):
@@ -435,54 +414,14 @@ class C:
                 'c': ['TOT', 0],
                 'd': ['TOT', 1],
                 'r': ['TOT', 2],
-                'cn': ['NEW', 0],
-                'dn': ['NEW', 1],
-                'rn': ['NEW', 2],
+                'nc': ['NEW', 0],
+                'nd': ['NEW', 1],
+                'nr': ['NEW', 2],
                 'p': ['%', 0]
             }[arg]
 
         except KeyError:
             return None
-
-    @staticmethod
-    def header(head):
-        return C.line(head), head
-
-    @staticmethod
-    def line(head):
-        return '-' * len(head.expandtabs())
-
-    @staticmethod
-    def comma_sep(s):
-        return '{:,.0f}'.format(s)
-
-
-class color:
-    DEFAULT = '\033[0m'
-    GREEN = '\033[92m'
-    BLUE = '\033[94m'
-    RED = '\033[91m'
-    DIM = '\033[2m'
-
-    @staticmethod
-    def dim(output, pre=None, post=None):
-        return color.DIM + \
-            ('' if pre is None else pre) + \
-            str(output) + \
-            ('' if post is None else post) + \
-            color.DEFAULT
-
-    @staticmethod
-    def green(output):
-        return color.GREEN + str(output) + color.DEFAULT
-
-    @staticmethod
-    def blue(output):
-        return color.BLUE + str(output) + color.DEFAULT
-
-    @staticmethod
-    def red(output):
-        return color.RED + str(output) + color.DEFAULT
 
 
 if __name__ == "__main__":

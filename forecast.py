@@ -1,8 +1,10 @@
 #!/usr/bin/python
 # -*- coding: utf-8 -*-
 
+import re
 import numpy
 import corona
+import utils as u
 from sys import argv
 from scipy.optimize import curve_fit
 from datetime import datetime, timedelta
@@ -23,13 +25,12 @@ def main():
     if not country:
         data = corona.get_data(True, True)
         COUNTRY = None
-
     else:
-        c = corona.C.regex(country)
+        c = r'\b' + re.escape(str(country).lower()) + r'\b'
         data = corona.get_data(True, False, c)
 
         if not data:
-            print('INVALID COUNTRY')
+            print(u.error(), 'INVALID COUNTRY')
             quit()
 
         COUNTRY = 'US' if country == 'Us' else country
@@ -37,10 +38,12 @@ def main():
     # Get everything for plot & print
     xarr, yarr = build_func_data(data, COUNTRY)
     a, k_e, b, L, k_l, x0 = get_functions(xarr, yarr)
-    B = 0  # b  # b-value in exp function
-    dates = list(data.keys()) \
-        if COUNTRY is None \
-        else list(data[COUNTRY].keys())
+    B = 0  # b-value in exp function
+
+    if COUNTRY is None:
+        dates = list(data.keys())
+    else:
+        dates = list(data[COUNTRY].keys())
 
     # Print functions and data
     print_functions(a, k_e, B, L, k_l, x0)
@@ -136,7 +139,6 @@ def logistic(x, L, k, x0):
 def get_functions(xarr, yarr):
     popt_e = fit_curve(exponential, xarr, yarr, 0.1)
     popt_l = fit_curve(logistic, xarr, yarr, 1)
-
     r = 5
     a, k_e, b = popt_e
     L, k_l, x0 = popt_l
@@ -145,12 +147,12 @@ def get_functions(xarr, yarr):
 
 
 def fit_curve(func, xarr, yarr, p01):
-    # p0 = scipy.optimize.curve_fit() will gueress a value of 1 for all parameters.
-    # This is generally not a good idea.
-    # Always explicitly supply own initial guesses.
+    '''
+    p0 = scipy.optimize.curve_fit() will gueress a value of 1 for all parameters.
+    This is generally not a good idea, always explicitly supply own initial guesses.
 
-    # Use maxfev to set a high number of iterations to assure it will converge.
-
+    Use maxfev to set a high number of iterations to assure it will converge.
+    '''
     popt, pcov = curve_fit(
         func,
         xarr,
@@ -165,9 +167,7 @@ def build_func_data(data, country=None):
     xarr, yarr = [], []
 
     for x, (k, v) in enumerate(iterate(data, country)):
-
         y = int(v[0]) if country is None else int(v['TOT'][0])
-
         yarr.append(y)
         xarr.append(x)
 
@@ -180,19 +180,19 @@ def iterate(data, country):
 
 def print_functions(a, k, b, L, k_l, x0):
     # a*e^(x*k)+b
-    print('\nEXPONENTIAL:\t{}e^({}x)+{}'.format(a, k, b))
+    print(u.info(), 'EXPONENTIAL:\t{}e^({}x)+{}'.format(a, k, b))
     # L/(1+e^(-k*(x-x0)))
-    print('\nLOGISTIC:\t{}/e^(-{}*(x-{}))'.format(L, k, x0))
+    print(u.info(), 'LOGISTIC:\t{}/e^(-{}*(x-{}))'.format(L, k, x0))
 
 
 def print_last_day(L, k_l, x0, start):
     ndays = calc_last_day(k_l, x0)
-
     last_day = start + timedelta(days=ndays)
     nconfirmed = logistic(ndays, L, k_l, x0)
-
-    print('\n{}\t{}'.format(C.LASTD, last_day))
-    print('{}\t\t{:,.0f}\n'.format(C.EST, int(nconfirmed)))
+    print('\n{} {}\t{}'
+          .format(u.info(), "LAST DAY BASED ON LOGISTIC FUNCTION:", last_day))
+    print('{} {}\t\t{:,.0f}\n'
+          .format(u.info(), 'ESTIMATED INFECTED ON LAST DAY:', int(nconfirmed)))
 
 
 def print_forecast(L, k_l, x0, a, k_e, b, dates, yarr, ndays):
@@ -213,7 +213,6 @@ def print_forecast(L, k_l, x0, a, k_e, b, dates, yarr, ndays):
 def print_data(date, real, x, L, k_l, x0, a, k_e, b):
     log = int(logistic(x, L, k_l, x0))
     exp = int(exponential(x, a, k_e, b))
-
     print(C.TABLE.format(date, real, exp, log))
 
 
@@ -225,11 +224,11 @@ def next_date(last, i):
 
 
 def print_header():
-    l, h = C.header(C.HEADER)
+    line = '-' * len(C.HEADER.expandtabs())
     print()
-    print(l)
-    print(h)
-    print(l)
+    print(line)
+    print(C.HEADER)
+    print(line)
 
 
 def get_params():
@@ -241,8 +240,6 @@ def get_params():
 
 
 class C:
-    LASTD = "LAST DAY BASED ON LOGISTIC FUNCTION:"
-    EST = 'ESTIMATED INFECTED ON LAST DAY:'
     TABLE = '{:10}{:>12,.0f}{:>12,.0f}{:>12,.0f}'
     HEADER = '{:10}{:>12}{:>12}{:>12}'.format('Date', 'Real', 'Exp', 'Log')
 
