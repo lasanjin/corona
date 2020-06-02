@@ -10,7 +10,7 @@ Corona statistics. Runs with Python 3+.
 Data from [Johns Hopkins CSSE](https://github.com/CSSEGISandData/COVID-19)
 
 ```
-$ ./corona.py -l | -g | -a [c|d|r|cn|dn|rn|p] | COUNTRY
+$ ./corona.py -l | -g | -c [c|d|r|nc|nd|nr|p] | COUNTRY
 ```
 
  - List countries
@@ -27,17 +27,17 @@ $ ./corona.py -g
    - `c`: Confirmed
    - `d`: Deaths
    - `r`: Recovered
-   - `cn`: New cases confirmed
-   - `dn`: New cases dead
-   - `rn`: New cases recovered
+   - `cn`: New confirmed
+   - `dn`: New deaths
+   - `rn`: New recovered
    - `p`: Percentage of cases that are fatal
 ```
-$ ./corona.py -a $1
+$ ./corona.py -c $1
 ```
 
  - List all data for specific country
 ```
-$ ./corona.py <country>
+$ ./corona.py <COUNTRY>
 ```
 
 
