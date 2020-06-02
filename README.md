@@ -27,9 +27,9 @@ $ ./corona.py -g
    - `c`: Confirmed
    - `d`: Deaths
    - `r`: Recovered
-   - `cn`: New confirmed
-   - `dn`: New deaths
-   - `rn`: New recovered
+   - `nc`: New confirmed
+   - `nd`: New deaths
+   - `nr`: New recovered
    - `p`: Percentage of cases that are fatal
 ```
 $ ./corona.py -c $1
