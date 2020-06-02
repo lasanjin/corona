@@ -3,7 +3,7 @@ Corona statistics. Runs with Python 3+.
 
 
 ## Demo
-<img src="demo.gif">
+<img src="resources/demo.gif">
 
 
 ## How to run
@@ -50,4 +50,4 @@ $ ./forecast.py [COUNTRY]
 
 </br>
 
-<img src="figure.png" width="800">
+<img src="resources/figure.png" width="800">
