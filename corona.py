@@ -301,7 +301,7 @@ def print_elements(first, n, new_n, dead, new_d, recovered, new_r, p=None, ALL=F
         u.color.dim(cs(new_r), '+')))
 
 
-def cs(s):
+def cs(s):  # comma-separator
     return '{:,.0f}'.format(s)  # 1000000 -> 1,000,000
 
 
@@ -391,8 +391,8 @@ class C:
             '\n\t\t./corona.py -c nc' \
             '\n\t\t./corona.py sweden'
     LIST_TABLE = '{:<40s}{:<40s}'
-    COUNTRY_TABLE = '{:<32}{:>18}{:>19}{:>20}{:>15}{:>19}{:>20}{:>19}'
-    COUNTRY_HEADER = '{:<28s}{:>13s}{:>11s}{:>11s}{:>7}{:>11s}{:>11s}{:>11s}'.format(
+    COUNTRY_TABLE = '{:<32}{:>19}{:>19}{:>20}{:>15}{:>19}{:>20}{:>19}'
+    COUNTRY_HEADER = '{:<28s}{:>14s}{:>11s}{:>11s}{:>7}{:>11s}{:>11s}{:>11s}'.format(
         "Date", "Confirmed", "New C.", "Deaths", "%", "New D.", "Recovered", "New R.")
     GLOBAL_TABLE = '{:<15}{:>19}{:>19}{:>20}{:>15}{:>19}{:>20}{:>19}'
     GLOBAL_HEADER = '{:<11s}{:>14s}{:>11s}{:>11s}{:>7}{:>11s}{:>11s}{:>11s}'.format(
