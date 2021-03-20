@@ -18,19 +18,19 @@ from modules.sortedcontainers import SortedSet, SortedDict
 def main():
     cmd, sort = get_params()
 
-    if cmd == C.EMPTY:
-        print(C.USAGE)
+    if cmd == Utils.EMPTY:
+        print(Utils.USAGE)
         quit()
 
-    elif cmd == C.LIST:
+    elif cmd == Utils.LIST:
         cs = get_countries()
         list_countries(cs)
 
-    elif cmd == C.COUNTRIES:
+    elif cmd == Utils.COUNTRIES:
         data = get_data(False)
         print_countries(data, sort)
 
-    elif cmd == C.GLOBAL:
+    elif cmd == Utils.GLOBAL:
         data = get_data(True, True)
         print_global(data)
 
@@ -44,7 +44,7 @@ def main():
 
 
 def get_countries():
-    url = api.append_url(api.TC)
+    url = Api.append_url(Api.TC)
     table = get_table(url, False)
     countries = SortedSet(key=str.lower)
 
@@ -97,7 +97,7 @@ def calc_percentage(n, dead):
 def build_queue():
     queue = PriorityQueue()
 
-    for category, url in enumerate(api.urls()):
+    for category, url in enumerate(Api.urls()):
         queue.put((category, url))
 
     return queue
@@ -173,7 +173,7 @@ def append_new_cases(prev, data, category, country, date, n):
 
 
 def parse_date(dt):
-    f = C.format('mdy')
+    f = Utils.format('mdy')
 
     try:
         return format_date(dt, f[0])
@@ -184,7 +184,7 @@ def parse_date(dt):
 def format_date(date, format):
     time = datetime \
         .strptime(str(date), format) \
-        .strftime(C.format('ymd'))
+        .strftime(Utils.format('ymd'))
 
     return time
 
@@ -196,11 +196,11 @@ def list_countries(countries):
         if i % 2 == 0:
             prev = c
         else:
-            print(C.LIST_TABLE.format(c, prev))
+            print(Utils.LIST_TABLE.format(c, prev))
 
 
 def print_countries(data, param):
-    print_header(C.COUNTRY_HEADER)
+    print_header(Utils.COUNTRY_HEADER)
     keys = find_keys(data)  # csv files are not always synced (dates)
 
     for k, v in sort(data, param, keys):
@@ -231,7 +231,7 @@ def find_keys(data):
 
 
 def sort(data, param, keys):
-    s = C.sort_by(param)
+    s = Utils.sort_by(param)
 
     if s is not None:
         return sorted(
@@ -245,7 +245,7 @@ def sort(data, param, keys):
 
 
 def print_global(data):
-    print_header(C.GLOBAL_HEADER)
+    print_header(Utils.GLOBAL_HEADER)
     prev = [0] * 3
 
     for k, v in data.items():
@@ -269,7 +269,7 @@ def print_country(data):
     if not data:
         print(u.error(), 'INVALID COUNTRY')
     else:
-        print_header(C.GLOBAL_HEADER)
+        print_header(Utils.GLOBAL_HEADER)
         prev = [0] * 3
 
         for country in data.values():
@@ -283,12 +283,12 @@ def print_country(data):
                 new_d = v['NEW'][1]
                 new_r = v['NEW'][2]
 
-                print_elements(date, n, new_n, dead, new_d,
-                               recovered, new_r, None)
+                print_elements(
+                    date, n, new_n, dead, new_d, recovered, new_r, None)
 
 
 def print_elements(first, n, new_n, dead, new_d, recovered, new_r, p=None, ALL=False):
-    f = C.COUNTRY_TABLE if ALL else C.GLOBAL_TABLE
+    f = Utils.COUNTRY_TABLE if ALL else Utils.GLOBAL_TABLE
     p = calc_percentage(n, dead) if p is None else p
     print(f.format(
         first,
@@ -319,12 +319,12 @@ def get_params():
         try:
             s = ' '.join(argv[1:][1:])
         except IndexError:
-            return cmd, C.EMPTY
+            return cmd, Utils.EMPTY
 
         return cmd, s
 
     except IndexError:
-        return C.EMPTY, C.EMPTY
+        return Utils.EMPTY, Utils.EMPTY
 
 
 def get_table(url, LIST=True):
@@ -351,7 +351,7 @@ def request(url):
         print("Exception:", e)
 
 
-class api:
+class Api:
     URL = 'https://raw.githubusercontent.com/CSSEGISandData' \
         '/COVID-19/master/csse_covid_19_data'
     TS = '/csse_covid_19_time_series/'
@@ -361,17 +361,17 @@ class api:
 
     @staticmethod
     def append_url(path):
-        return '{}{}{}'.format(api.URL, api.TS, path)
+        return '{}{}{}'.format(Api.URL, Api.TS, path)
 
     @staticmethod
     def urls():
         return [
-            api.append_url(api.TC),
-            api.append_url(api.TD),
-            api.append_url(api.TR)]
+            Api.append_url(Api.TC),
+            Api.append_url(Api.TD),
+            Api.append_url(Api.TR)]
 
 
-class C:
+class Utils:
     EMPTY = ''
     LIST = '-l'
     GLOBAL = '-g'
@@ -394,8 +394,8 @@ class C:
     COUNTRY_TABLE = '{:<32}{:>19}{:>19}{:>20}{:>15}{:>19}{:>20}{:>19}'
     COUNTRY_HEADER = '{:<28s}{:>14s}{:>11s}{:>11s}{:>7}{:>11s}{:>11s}{:>11s}'.format(
         "Date", "Confirmed", "New C.", "Deaths", "%", "New D.", "Recovered", "New R.")
-    GLOBAL_TABLE = '{:<15}{:>19}{:>19}{:>20}{:>15}{:>19}{:>20}{:>19}'
-    GLOBAL_HEADER = '{:<11s}{:>14s}{:>11s}{:>11s}{:>7}{:>11s}{:>11s}{:>11s}'.format(
+    GLOBAL_TABLE = '{:<15}{:>20}{:>19}{:>20}{:>15}{:>19}{:>20}{:>19}'
+    GLOBAL_HEADER = '{:<11s}{:>15s}{:>11s}{:>11s}{:>7}{:>11s}{:>11s}{:>11s}'.format(
         "Date", "Confirmed", "New C.", "Deaths", "%", "New D.", "Recovered", "New R.")
 
     @staticmethod
